@@ -11,8 +11,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 
-
-
 [project.optional-dependencies]
 dev = [
     "build",
@@ -24,9 +22,7 @@ dev = [
     "ruff",
     "twine",
 ]
-style = [
-    "ruff",
-]
+style = ["ruff"]
 docs = ["myst-parser", "sphinx", "sphinx-autobuild", "sphinx-rtd-theme"]
 
 [build-system]
@@ -34,7 +30,6 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-
 version = { attr = "configenvparser.__version__" }
 
 [tool.setuptools.packages.find]
