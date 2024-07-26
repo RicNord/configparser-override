@@ -11,20 +11,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ConfigEnvParser:
+class ConfigParserOverride:
     def __init__(
         self,
         env_prefix: str = "",
+        **overrides,
     ):
         """
-        Initialize the ConfigEnvParser.
+        Initialize the ConfigParserOverride.
 
         :param env_prefix: Optional prefix for environment variables, defaults to an
             empty string.
         :type env_prefix: str, optional
+        :param overrides: Keyword arguments to directly override configuration values.
         """
         self._config = configparser.ConfigParser()
         self.env_prefix = env_prefix
+        self.overrides = overrides
 
     def _find_and_override(self):
         """
@@ -64,6 +67,27 @@ class ConfigEnvParser:
             else:
                 logger.debug(f"Environment variable {env_var} not set")
 
+    def _apply_overrides(self):
+        """
+        Internal method to apply direct overrides passed during initialization.
+        """
+        for key, value in self.overrides.items():
+            if "__" in key:
+                section, option = key.split("__", 1)
+            else:
+                section, option = self._config.default_section, key
+
+            if section.upper() == self._config.default_section.upper():
+                logger.debug(
+                    f"Override default section, {option=} with direct argument"
+                )
+                self._config.set(section=section, option=option, value=value)
+            else:
+                if not self._config.has_section(section):
+                    self._config.add_section(section)
+                logger.debug(f"Override {section=}, {option=} with direct argument")
+                self._config.set(section=section, option=option, value=value)
+
     def read(
         self,
         filenames: StrOrBytesPath | Iterable[StrOrBytesPath],
@@ -75,7 +99,8 @@ class ConfigEnvParser:
 
         This method is a wrapper around :py:meth:`configparser.ConfigParser.read` that
         reads the specified filenames in order. After reading the files, it overrides
-        configuration values with any corresponding environment variables.
+        configuration values with any corresponding environment variables and direct
+        overrides passed during initialization.
 
         :param filenames: A single filename or an iterable of filenames to read.
         :type filenames: :py:class:`_typeshed.StrOrBytesPath` or
@@ -88,6 +113,7 @@ class ConfigEnvParser:
         """
         self._config.read(filenames=filenames, encoding=encoding)
         self._find_and_override()
+        self._apply_overrides()
         return self.config
 
     @property
