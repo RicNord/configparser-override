@@ -1,0 +1,144 @@
+[project]
+name = "configenvparser"
+description = "Configparser with enviorment variable override"
+authors = [{ name = "Richard Nordström" }]
+readme = "README.md"
+dynamic = ["version"]
+dependencies = []
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "bump-my-version",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "twine",
+]
+style = [
+    "ruff",
+]
+docs = ["myst-parser", "sphinx", "sphinx-autobuild", "sphinx-rtd-theme"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+
+version = { attr = "configenvparser.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["configenvparser*"]
+exclude = ["data*", "tests*"]
+
+[tool.setuptools.package-data]
+configenvparser = ["*.json", "*.yaml", "*.yml", "*.txt"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+required_plugins = ["pytest-cov"]
+addopts = [
+    "--strict-config",
+    "--ignore=setup.py",
+    "--cov=configenvparser",
+    "--cov-config=pyproject.toml",
+    "--cov-append",
+    "--cov-report=term-missing",
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "C",      # flake8-comprehensions
+    "B",      # flake8-bugbear
+    "TID",    # flake8-tidy-import
+    "TCH",    # flake8-type-checking TYPE_CHECKING blocks
+    "ISC",    # flake8-implicit-str-concat
+    "LOG",    # flake8-logging
+    "SIM",    # flake8-simplify
+    "RUF100", # Unused noqa (auto-fixable)
+]
+ignore = [
+    "E501",   # line too long, handled by black
+    "B008",   # do not perform function calls in argument defaults
+    "C901",   # too complex
+    "ISC001", # can cause conflict with formatter
+]
+
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+indent-style = "space"
+# Use `\n` line endings for all files
+line-ending = "lf"
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+
+[tool.coverage.run]
+branch = true
+source = ["configenvparser"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+
+    # Dont complain typing
+    "@(typing(_extensions)?\\.)?overload",
+    "if (typing(_extensions)?\\.)?TYPE_CHECKING:",
+]
+
+[tool.bumpversion]
+current_version = "0.1.0"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+regex = false
+ignore_missing_version = false
+ignore_missing_files = false
+tag = true
+sign_tags = false
+tag_name = "v{new_version}"
+tag_message = "Bump version: {current_version} -> {new_version}"
+allow_dirty = false
+commit = true
+message = "Bump version: {current_version} -> {new_version}"
+commit_args = ""
+
+[[tool.bumpversion.files]]
+filename = "configenvparser/__init__.py"
+
+[tool.mypy]
+files = ["configenvparser/**/*.py", "tests/**/*.py"]
