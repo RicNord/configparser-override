@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from configenvparser import __version__
-from configenvparser.configenvparser import ConfigEnvParser
+from configparser_override import __version__
+from configparser_override.configparser_override import ConfigEnvParser
 
 TEST_ENV_PREFIX = "TEST"
 

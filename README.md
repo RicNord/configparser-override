@@ -16,7 +16,7 @@ need to support configuration via both files and environment variables.
 ## Install
 
 ```sh
-pip install configenvparser
+pip install configparser-override
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ key3 = value3
 
 ```python
 import os
-from configenvparser import ConfigEnvParser
+from configparser_override import ConfigEnvParser
 
 # Optionally set environment variables for overriding
 os.environ['MYAPP_DEFAULT_KEY1'] = 'overridden_default_value1'

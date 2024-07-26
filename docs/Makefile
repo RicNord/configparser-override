@@ -7,7 +7,7 @@ SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
-PKG           = ../configenvparser
+PKG           = ../configparser_override
 
 # Put it first so that "make" without argument is like "make help".
 .PHONY: help

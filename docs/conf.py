@@ -9,16 +9,16 @@
 import os
 import sys
 
-import configenvparser
+import configparser_override
 
 # Execute as file cwd
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "configenvparser"
+project = "configparser_override"
 copyright = "2024, Richard Nordström"
 author = "Richard Nordström"
-release = configenvparser.__version__
-version = configenvparser.__version__
+release = configparser_override.__version__
+version = configparser_override.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

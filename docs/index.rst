@@ -1,5 +1,5 @@
-Welcome to ConfigEnvParser's documentation!
-===========================================
+Welcome to configparser-override's documentation!
+=================================================
 
 .. include:: ../README.md
    :parser: myst_parser.sphinx_

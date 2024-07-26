@@ -1,6 +1,6 @@
 [project]
-name = "configenvparser"
-description = "Configparser with enviorment variable override"
+name = "configparser-override"
+description = "Configparser with environment variable and direct override"
 authors = [{ name = "Richard Nordström" }]
 readme = "README.md"
 dynamic = ["version"]
@@ -30,14 +30,14 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = { attr = "configenvparser.__version__" }
+version = { attr = "configparser_override.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["configenvparser*"]
+include = ["configparser_override*"]
 exclude = ["data*", "tests*"]
 
 [tool.setuptools.package-data]
-configenvparser = ["*.json", "*.yaml", "*.yml", "*.txt"]
+configparser_override = ["*.json", "*.yaml", "*.yml", "*.txt"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -45,7 +45,7 @@ required_plugins = ["pytest-cov"]
 addopts = [
     "--strict-config",
     "--ignore=setup.py",
-    "--cov=configenvparser",
+    "--cov=configparser_override",
     "--cov-config=pyproject.toml",
     "--cov-append",
     "--cov-report=term-missing",
@@ -89,7 +89,7 @@ ban-relative-imports = "all"
 
 [tool.coverage.run]
 branch = true
-source = ["configenvparser"]
+source = ["configparser_override"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
@@ -133,7 +133,7 @@ message = "Bump version: {current_version} -> {new_version}"
 commit_args = ""
 
 [[tool.bumpversion.files]]
-filename = "configenvparser/__init__.py"
+filename = "configparser_override/__init__.py"
 
 [tool.mypy]
-files = ["configenvparser/**/*.py", "tests/**/*.py"]
+files = ["configparser_override/**/*.py", "tests/**/*.py"]
