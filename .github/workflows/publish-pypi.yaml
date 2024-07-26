@@ -6,7 +6,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
-      tags:
+      publish_to_testpypi:
         description: 'Publish to testPyPi'
         required: true
         type: boolean
@@ -103,7 +103,7 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python distribution to TestPyPI
-    if: ${{ inputs.publish-to-testpypi }}
+    if: ${{ inputs.publish_to_testpypi }}
     needs:
       - build
     runs-on: ubuntu-latest
