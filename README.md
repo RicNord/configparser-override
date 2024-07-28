@@ -1,5 +1,8 @@
 # ConfigParser Override
 
+[![Version](https://img.shields.io/pypi/v/configparser-override?color=blue)](https://pypi.org/project/configparser-override/)
+[![Build Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
+
 This library provides a utility class `ConfigParserOverride` that extends the
 functionality of `configparser.ConfigParser` to allow overriding configuration
 values with environment variables and directly assigned key-value arguments.
