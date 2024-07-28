@@ -2,15 +2,15 @@
 
 This library provides a utility class `ConfigParserOverride` that extends the
 functionality of `configparser.ConfigParser` to allow overriding configuration
-values with environment variables and directly passed key-value arguments.
+values with environment variables and directly assigned key-value arguments.
 
-> **NOTE:** ConfigParser Override only depends on the Python standard library!
+> **NOTE:** This library only depends on the Python standard library!
 
 ## Features
 
 - Read configuration from one or more files.
 - Override configuration values with environment variables.
-- Override configuration values with directly passed arguments.
+- Override configuration values with directly assigned arguments.
 - Support for optional environment variable prefix.
 
 ## Install
