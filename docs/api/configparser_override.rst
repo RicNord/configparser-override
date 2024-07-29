@@ -4,13 +4,10 @@ configparser\_override package
 Submodules
 ----------
 
-configparser\_override.configparser\_override module
-----------------------------------------------------
+.. toctree::
+   :maxdepth: 2
 
-.. automodule:: configparser_override.configparser_override
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   configparser_override.configparser_override
 
 Module contents
 ---------------

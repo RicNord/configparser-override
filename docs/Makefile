@@ -20,7 +20,7 @@ livehtml:
 
 .PHONY: apidocs
 apidocs:
-	sphinx-apidoc -o $(SOURCEDIR)/api $(PKG)
+	sphinx-apidoc --maxdepth 2 --remove-old --separate --output-dir $(SOURCEDIR)/api $(PKG)
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

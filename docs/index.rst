@@ -4,14 +4,16 @@ Welcome to configparser-override's documentation!
 .. include:: ../README.md
    :parser: myst_parser.sphinx_
 
-API Reference
-=============
-
-:doc:`api/modules`
-
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: API Reference
+
+   api/modules
