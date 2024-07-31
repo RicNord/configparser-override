@@ -34,23 +34,32 @@ class Strategy(ABC):
 
     def collect_env_vars_with_prefix(self, prefix: str) -> dict[str, str]:
         return {
-            key.strip(prefix): value
+            key[len(prefix) :]: value
             for key, value in os.environ.items()
             if key.startswith(prefix)
         }
 
     def parse_key(self, key: str) -> tuple[str, str]:
+        """Parse a given key from wither environment varaiable or directly assign
+        key-value argument.
+
+        .. note::
+            ConfigParser stores all options as lowercase hence the option part is standardized to be lowercase
+        """
         parts = key.split("__", 1)
         if len(parts) == 1:
-            return "DEFAULT", parts[0]
-        return parts[0], parts[1]
+            return "DEFAULT", parts[0].lower()
+        return parts[0], parts[1].lower()
 
     def override_env(self, create_new_options: bool):
         if create_new_options:
             env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
             for key, value in env_vars.items():
                 section, option = self.parse_key(key)
-                if not self._config.has_section(section=section):
+                if (
+                    not self._config.has_section(section=section)
+                    and section != "DEFAULT"
+                ):
                     self._config.add_section(section=section)
                 self._config.set(section=section, option=option, value=value)
 
@@ -58,9 +67,9 @@ class Strategy(ABC):
             for section in self._config.sections():
                 for option in self._config[section]:
                     env_var = (
-                        f"{self._env_prefix}{section}__{option}"
+                        f"{self._env_prefix}{section}__{option.upper()}"
                         if self._env_prefix != ""
-                        else f"{section}__{option}"
+                        else f"{section}__{option.upper()}"
                     )
                     if env_var in os.environ:
                         _value = os.environ[env_var]
@@ -72,9 +81,9 @@ class Strategy(ABC):
             _default_section = self._config.default_section
             for option in self._config.defaults():
                 env_var = (
-                    f"{self._env_prefix}_{option}"
+                    f"{self._env_prefix}{option.upper()}"
                     if self._env_prefix != ""
-                    else f"{option}"
+                    else f"{option.upper()}"
                 )
                 if env_var in os.environ:
                     _value = os.environ[env_var]
@@ -91,7 +100,10 @@ class Strategy(ABC):
         if create_new_options:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
-                if not self._config.has_section(section=section):
+                if (
+                    not self._config.has_section(section=section)
+                    and section != "DEFAULT"
+                ):
                     self._config.add_section(section=section)
                 self._config.set(section=section, option=option, value=value)
 
@@ -111,12 +123,8 @@ class Strategy(ABC):
 
 class NoPrefixNoNewStrategy(Strategy):
     def execute(self):
-        for key, value in self._overrides.items():
-            section, option = self.parse_key(key)
-            if self._config.has_section(section) and self._config.has_option(
-                section, option
-            ):
-                self._config.set(section, option, value)
+        self.override_env(create_new_options=False)
+        self.override_direct(create_new_options=False)
 
 
 class NoPrefixNewDirectStrategy(Strategy):
@@ -133,12 +141,8 @@ class PrefixNoNewStrategy(Strategy):
 
 class PrefixNewEnvStrategy(Strategy):
     def execute(self):
-        env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
-        for key, value in env_vars.items():
-            section, option = self.parse_key(key)
-            if not self._config.has_section(section):
-                self._config.add_section(section)
-            self._config.set(section, option, value)
+        self.override_env(create_new_options=True)
+        self.override_direct(create_new_options=False)
 
 
 class PrefixNewDirectStrategy(Strategy):
