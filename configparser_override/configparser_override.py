@@ -74,7 +74,7 @@ class Strategy(ABC):
         """
         parts = key.split("__", 1)
         if len(parts) == 1:
-            return "DEFAULT", parts[0].lower()
+            return self._config.default_section, parts[0].lower()
         return parts[0], parts[1].lower()
 
     def override_env(self, create_new_options: bool):
@@ -90,7 +90,7 @@ class Strategy(ABC):
                 section, option = self.parse_key(key)
                 if (
                     not self._config.has_section(section=section)
-                    and section != "DEFAULT"
+                    and section != self._config.default_section
                 ):
                     self._config.add_section(section=section)
                 self._config.set(section=section, option=option, value=value)
@@ -140,7 +140,7 @@ class Strategy(ABC):
                 section, option = self.parse_key(key)
                 if (
                     not self._config.has_section(section=section)
-                    and section != "DEFAULT"
+                    and section != self._config.default_section
                 ):
                     self._config.add_section(section=section)
                 self._config.set(section=section, option=option, value=value)

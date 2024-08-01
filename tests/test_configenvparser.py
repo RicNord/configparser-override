@@ -66,6 +66,26 @@ def config_file_with_default(tmp_path):
     return str(config_path)
 
 
+@pytest.fixture
+def config_file_with_custom_default(tmp_path):
+    config_content = """
+    [COMMON]
+    default_key1 = default_value1
+    default_key2 = default_value2
+    default_key3 = default_value3
+
+    [SECTION1]
+    key1 = value1
+    key2 = value2
+
+    [SECTION2]
+    key3 = value3
+    """
+    config_path = tmp_path / "config_with_custom_default.ini"
+    config_path.write_text(config_content)
+    return str(config_path)
+
+
 def test_initialization():
     parser = ConfigParserOverride(env_prefix=TEST_ENV_PREFIX)
     assert parser.env_prefix == TEST_ENV_PREFIX
@@ -496,3 +516,34 @@ def test_custom_config_parser_with_default_section(config_file_with_default):
 
     assert config.defaults()["default_key"] == "direct_override_default_value"
     assert config["DEFAULT"]["default_key"] == "direct_override_default_value"
+
+
+def test_custom_config_parser_with_custom_default_section(
+    config_file_with_custom_default,
+):
+    custom_parser = configparser.ConfigParser(default_section="COMMON")
+
+    parser = ConfigParserOverride(
+        config_parser=custom_parser,
+    )
+    config = parser.read(filenames=config_file_with_custom_default)
+
+    assert config.defaults()["default_key1"] == "default_value1"
+    assert config["COMMON"]["default_key1"] == "default_value1"
+
+
+def test_custom_config_parser_with_custom_default_section_override(
+    monkeypatch, config_file_with_custom_default
+):
+    custom_parser = configparser.ConfigParser(default_section="COMMON")
+    monkeypatch.setenv(f"{TEST_ENV_PREFIX}DEFAULT_KEY1", "env_value1")
+
+    parser = ConfigParserOverride(
+        config_parser=custom_parser,
+        env_prefix=TEST_ENV_PREFIX,
+        default_key2="direct_override_default_value2",
+    )
+    config = parser.read(filenames=config_file_with_custom_default)
+
+    assert config.defaults()["default_key2"] == "direct_override_default_value2"
+    assert config.defaults()["default_key1"] == "env_value1"
