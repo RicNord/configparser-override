@@ -432,3 +432,67 @@ def test_all_combinations(
             assert config.has_option(section="SECTION1", option="key3") is False
 
         assert config.get("SECTION2", "key3") == "value3"
+
+
+def test_custom_config_parser():
+    custom_parser = configparser.ConfigParser()
+    custom_parser.add_section("CUSTOM")
+    custom_parser.set("CUSTOM", "key", "custom_value")
+
+    parser = ConfigParserOverride(config_parser=custom_parser)
+    config = parser.config
+
+    assert config["CUSTOM"]["key"] == "custom_value"
+
+
+def test_custom_config_parser_with_combined_overrides(monkeypatch):
+    custom_parser = configparser.ConfigParser()
+    custom_parser.add_section("CUSTOM")
+    custom_parser.set("CUSTOM", "key", "custom_value")
+
+    config_override = ConfigParserOverride(
+        config_parser=custom_parser,
+        env_prefix=TEST_ENV_PREFIX,
+        create_new_from_env_prefix=True,
+        create_new_from_direct=True,
+        CUSTOM__key="override_value",
+    )
+
+    monkeypatch.setenv(f"{TEST_ENV_PREFIX}CUSTOM__NEWKEY", "env_value")
+    config = config_override.read([])
+
+    assert config.get("CUSTOM", "key") == "override_value"
+    assert config.get("CUSTOM", "newkey") == "env_value"
+
+
+def test_custom_config_parser_with_file(config_file):
+    custom_parser = configparser.ConfigParser()
+    custom_parser.add_section("CUSTOM")
+    custom_parser.set("CUSTOM", "key", "custom_value")
+
+    parser = ConfigParserOverride(
+        config_parser=custom_parser,
+        env_prefix=TEST_ENV_PREFIX,
+        SECTION1__key1="override_value",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["CUSTOM"]["key"] == "custom_value"
+    assert config["SECTION1"]["key1"] == "override_value"
+    assert config["SECTION1"]["key2"] == "value2"  # Not overridden
+    assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+
+
+def test_custom_config_parser_with_default_section(config_file_with_default):
+    custom_parser = configparser.ConfigParser()
+    custom_parser.set("DEFAULT", "default_key", "custom_default_value")
+
+    parser = ConfigParserOverride(
+        config_parser=custom_parser,
+        env_prefix=TEST_ENV_PREFIX,
+        default_key="direct_override_default_value",
+    )
+    config = parser.read(filenames=config_file_with_default)
+
+    assert config.defaults()["default_key"] == "direct_override_default_value"
+    assert config["DEFAULT"]["default_key"] == "direct_override_default_value"

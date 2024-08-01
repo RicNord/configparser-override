@@ -314,6 +314,7 @@ class ConfigParserOverride:
         env_prefix: str = "",
         create_new_from_env_prefix: bool = False,
         create_new_from_direct: bool = True,
+        config_parser: configparser.ConfigParser | None = None,
         **overrides: str | None,
     ):
         """
@@ -328,6 +329,9 @@ class ConfigParserOverride:
         :param create_new_from_direct: Flag to create new configuration
             options from direct overrides.
         :type create_new_from_direct: bool, optional
+        :param config_parser: Optional ConfigParser object to be used,
+            defaults to None.
+        :type config_parser: configparser.ConfigParser, optional
         :param overrides: Keyword arguments to directly override configuration values.
         :type overrides: dict[str, str | None]
         """
@@ -338,11 +342,12 @@ class ConfigParserOverride:
         self.overrides = overrides
 
         if self.create_new_from_env_prefix:
-            assert (
-                self.env_prefix
-            ), "To set new configuration options from environment variables a prefix has to be used!"
+            assert self.env_prefix, "To set new configuration options from environment variables a prefix has to be used!"
 
-        self._config = configparser.ConfigParser()
+        if config_parser is None:
+            self._config = configparser.ConfigParser()
+        else:
+            self._config = config_parser
 
     def _get_override_strategy(self) -> Strategy:
         """
