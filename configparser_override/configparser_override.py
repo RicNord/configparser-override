@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class OverrideStrategyNotImplementedError(Exception):
+    """Exception raised when an unimplemented strategy is requested."""
+
     pass
 
 
@@ -24,15 +26,34 @@ class Strategy(ABC):
         env_prefix: str,
         overrides: Mapping[str, str | None],
     ):
+        """
+        Initialize the base Strategy class.
+
+        :param config: The ConfigParser object to be used.
+        :type config: configparser.ConfigParser
+        :param env_prefix: Prefix for environment variables.
+        :type env_prefix: str
+        :param overrides: Mapping of override keys and values.
+        :type overrides: Mapping[str, str | None]
+        """
         self._config = config
         self._env_prefix = env_prefix
         self._overrides = overrides
 
     @abstractmethod
     def execute(self):
+        """Execute the strategy. Must be implemented by subclasses."""
         pass
 
     def collect_env_vars_with_prefix(self, prefix: str) -> dict[str, str]:
+        """
+        Collect environment variables that start with the given prefix.
+
+        :param prefix: The prefix to filter environment variables.
+        :type prefix: str
+        :return: Dictionary of environment variables with the prefix removed.
+        :rtype: dict[str, str]
+        """
         return {
             key[len(prefix) :]: value
             for key, value in os.environ.items()
@@ -40,11 +61,16 @@ class Strategy(ABC):
         }
 
     def parse_key(self, key: str) -> tuple[str, str]:
-        """Parse a given key from wither environment varaiable or directly assign
-        key-value argument.
+        """
+        Parse a given key to extract the section and option.
 
-        .. note::
-            ConfigParser stores all options as lowercase hence the option part is standardized to be lowercase
+        ConfigParser stores all options as lowercase, hence the option part is
+        standardized to be lowercase.
+
+        :param key: The key to parse.
+        :type key: str
+        :return: A tuple containing the section and option.
+        :rtype: tuple[str, str]
         """
         parts = key.split("__", 1)
         if len(parts) == 1:
@@ -52,6 +78,12 @@ class Strategy(ABC):
         return parts[0], parts[1].lower()
 
     def override_env(self, create_new_options: bool):
+        """
+        Override configuration values using environment variables.
+
+        :param create_new_options: Flag to indicate if new options can be created.
+        :type create_new_options: bool
+        """
         if create_new_options:
             env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
             for key, value in env_vars.items():
@@ -97,6 +129,12 @@ class Strategy(ABC):
                     logger.debug(f"Environment variable {env_var} not set")
 
     def override_direct(self, create_new_options: bool):
+        """
+        Override configuration values using direct overrides.
+
+        :param create_new_options: Flag to indicate if new options can be created.
+        :type create_new_options: bool
+        """
         if create_new_options:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
@@ -123,36 +161,42 @@ class Strategy(ABC):
 
 class NoPrefixNoNewStrategy(Strategy):
     def execute(self):
+        """Execute strategy: No prefix and no new options."""
         self.override_env(create_new_options=False)
         self.override_direct(create_new_options=False)
 
 
 class NoPrefixNewDirectStrategy(Strategy):
     def execute(self):
+        """Execute strategy: No prefix and allow new direct options."""
         self.override_env(create_new_options=False)
         self.override_direct(create_new_options=True)
 
 
 class PrefixNoNewStrategy(Strategy):
     def execute(self):
+        """Execute strategy: Prefix used and no new options."""
         self.override_env(create_new_options=False)
         self.override_direct(create_new_options=False)
 
 
 class PrefixNewEnvStrategy(Strategy):
     def execute(self):
+        """Execute strategy: Prefix used and allow new environment options."""
         self.override_env(create_new_options=True)
         self.override_direct(create_new_options=False)
 
 
 class PrefixNewDirectStrategy(Strategy):
     def execute(self):
+        """Execute strategy: Prefix used and allow new direct options."""
         self.override_env(create_new_options=False)
         self.override_direct(create_new_options=True)
 
 
 class PrefixNewEnvNewDirectStrategy(Strategy):
     def execute(self):
+        """Execute strategy: Prefix used and allow new environment and direct options."""
         self.override_env(create_new_options=True)
         self.override_direct(create_new_options=True)
 
@@ -175,6 +219,21 @@ class StrategyFactory:
         create_new_from_direct: bool,
         overrides: dict[str, str | None],
     ):
+        """
+        Initialize the StrategyFactory.
+
+        :param config: The ConfigParser object to be used.
+        :type config: configparser.ConfigParser
+        :param env_prefix: Prefix for environment variables.
+        :type env_prefix: str
+        :param create_new_from_env_prefix: Flag to create new options from environment
+            variables.
+        :type create_new_from_env_prefix: bool
+        :param create_new_from_direct: Flag to create new options from direct overrides.
+        :type create_new_from_direct: bool
+        :param overrides: Dictionary of override keys and values.
+        :type overrides: dict[str, str | None]
+        """
         self.config = config
         self.env_prefix = env_prefix
         self.create_new_from_env_prefix = create_new_from_env_prefix
@@ -183,11 +242,13 @@ class StrategyFactory:
 
     def get_strategy(self) -> Strategy:
         """
-        Determine the appropriate strategy based on initialization parameters.
+        Determine and return the appropriate strategy based on initialization
+        parameters.
 
         :return: The appropriate strategy instance.
+        :rtype: Strategy
+        :raises OverrideStrategyNotImplementedError: If no matching strategy is found.
         """
-
         NO_PREFIX_NO_NEW = (
             self.env_prefix == ""
             and self.create_new_from_env_prefix is False
@@ -268,6 +329,7 @@ class ConfigParserOverride:
             options from direct overrides.
         :type create_new_from_direct: bool, optional
         :param overrides: Keyword arguments to directly override configuration values.
+        :type overrides: dict[str, str | None]
         """
 
         self.env_prefix = env_prefix
@@ -276,11 +338,19 @@ class ConfigParserOverride:
         self.overrides = overrides
 
         if self.create_new_from_env_prefix:
-            assert self.env_prefix, "To set new configuration options from environment variables a prefix has to be used!"
+            assert (
+                self.env_prefix
+            ), "To set new configuration options from environment variables a prefix has to be used!"
 
         self._config = configparser.ConfigParser()
 
     def _get_override_strategy(self) -> Strategy:
+        """
+        Get the appropriate override strategy based on initialization parameters.
+
+        :return: The appropriate strategy instance.
+        :rtype: Strategy
+        """
         return StrategyFactory(
             self._config,
             self.env_prefix,
