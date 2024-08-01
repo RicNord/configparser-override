@@ -5,7 +5,7 @@ import enum
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 if TYPE_CHECKING:
     from _typeshed import StrOrBytesPath
@@ -22,7 +22,7 @@ class Strategy(ABC):
         self,
         config: configparser.ConfigParser,
         env_prefix: str,
-        overrides: dict[str, str | None],
+        overrides: Mapping[str, str | None],
     ):
         self._config = config
         self._env_prefix = env_prefix
