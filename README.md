@@ -81,11 +81,11 @@ The format for environment variable names is as follows:
 - When **no prefix** is set: The format is `[OPTION]`.
 - When **a prefix** is set: The format is `[PREFIX][OPTION]`.
 - Sections and options are denoted with double underscores (`__`).
-  - The format is `[PREFIX][SECTION]_[OPTION]` or `[SECTION]__[OPTION]` if no prefix
+  - The format is `[PREFIX][SECTION]__[OPTION]` or `[SECTION]__[OPTION]` if no prefix
     is set.
 
-For example, to override `key1` in `section1` with a prefix `MYAPP`, the
-environment variable would be `MYAPP__SECTION1_KEY1`.
+For example, to override the option `key1` in `SECTION1` with a prefix
+`MYAPP_`, the environment variable would be `MYAPP_SECTION1__KEY1`.
 
 #### Platform dependency
 
