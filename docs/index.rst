@@ -14,6 +14,13 @@ Indices and tables
 .. toctree::
    :maxdepth: 2
    :hidden:
+   :caption: Development
+
+   development
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
    :caption: API Reference
 
    api/modules
