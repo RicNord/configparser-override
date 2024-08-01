@@ -386,6 +386,17 @@ class ConfigParserOverride:
         :return: The :py:class:`configparser.ConfigParser` object with the loaded and
             possibly overridden configuration.
         :rtype: :py:class:`configparser.ConfigParser`
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride(TEST_KEY='value')
+            >>> config = parser_override.read(['example.ini'])
+            >>> config.get('DEFAULT', 'TEST_KEY')
+            'value'
+
+
         """
         self._config.read(filenames=filenames, encoding=encoding)
         strategy = self._get_override_strategy()
@@ -397,8 +408,33 @@ class ConfigParserOverride:
         """
         Property to access the configuration.
 
+        This can be used to modify the property of the configparser object and
+        also set and get options manually.
+
         :return: The :py:class:`configparser.ConfigParser` object
             with the configuration.
         :rtype: :py:class:`configparser.ConfigParser`
+
+        **Examples:**
+
+        Get an option after parsing and overrides:
+
+        .. code-block:: python
+
+            >>> config = ConfigParserOverride(TEST_KEY='value')
+            >>> config.read(['example.ini'])
+            >>> config.get('DEFAULT', 'test_key')
+            'value'
+
+        Can also be used like just like regular ConfigParser:
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride()
+            >>> config = parser_override.config
+            >>> config.set('section', 'option', 'value')
+            >>> config.get('section', 'option')
+            'value'
+
         """
         return self._config
