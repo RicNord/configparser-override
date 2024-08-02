@@ -24,6 +24,14 @@ class OverrideStrategyNotImplementedError(Exception):
 
 
 def _lowercase_optionxform(optionstr: str) -> str:
+    """
+    Convert the given option string to lowercase.
+
+    :param optionstr: The option string to be converted.
+    :type optionstr: str
+    :return: The lowercase version of the option string.
+    :rtype: str
+    """
     return optionstr.lower()
 
 
@@ -45,6 +53,11 @@ class Strategy(ABC):
         :type env_prefix: str
         :param overrides: Mapping of override keys and values.
         :type overrides: Mapping[str, str | None]
+        :param case_sensetive_overrides: Flag to indicate if overrides should
+            be case sensitive.
+        :type case_sensetive_overrides: bool, optional
+        :param optionxform_fn: Optional function to transform option strings.
+        :type optionxform_fn: _optionxform_fn | None, optional
         """
         self._config = config
         self._env_prefix = env_prefix
@@ -93,6 +106,23 @@ class Strategy(ABC):
         return parts[0], self.optionxform_fn(parts[1])
 
     def decide_env_var(self, prefix: str, section: str, option: str) -> str:
+        """
+        Determine the appropriate environment variable name based on the given
+        prefix, section, and option.
+
+        :param prefix: The prefix for environment variables.
+        :type prefix: str
+        :param section: The section in the configuration.
+        :type section: str
+        :param option: The option in the configuration.
+        :type option: str
+        :return: The environment variable name.
+        :rtype: str
+
+        .. note::
+            This method is aware of case-sensitivity setting
+
+        """
         if self.case_sensetive_overrides:
             if section == self._config.default_section:
                 return f"{prefix}{option}" if prefix != "" else option
@@ -169,6 +199,18 @@ class Strategy(ABC):
                     logger.debug(f"Environment variable {env_var} not set")
 
     def has_section(self, section: str) -> bool:
+        """
+        Check if the configuration has the specified section.
+
+        :param section: The section name to check.
+        :type section: str
+        :return: True if the section exists, False otherwise.
+        :rtype: bool
+
+        .. note::
+            This method is aware of case-sensitivity setting
+
+        """
         if self.case_sensetive_overrides:
             return (
                 self._config.has_section(section)
@@ -180,6 +222,14 @@ class Strategy(ABC):
         return exists or is_default
 
     def get_existing_section_case_insensitive(self, section: str) -> str:
+        """
+        Get the existing section name in a case-insensitive manner.
+
+        :param section: The section name to search for.
+        :type section: str
+        :return: The actual section name in the configuration.
+        :rtype: str
+        """
         if section.lower() == self._config.default_section.lower():
             return self._config.default_section
         _sections = {section.lower(): section for section in self._config.sections()}
@@ -316,6 +366,11 @@ class StrategyFactory:
         :type create_new_from_direct: bool
         :param overrides: Dictionary of override keys and values.
         :type overrides: dict[str, str | None]
+        :param case_sensetive_overrides: Flag to indicate if overrides should
+            be case sensitive.
+        :type case_sensetive_overrides: bool, optional
+        :param optionxform: Optional function to transform option strings.
+        :type optionxform: _optionxform_fn | None, optional
         """
         self.config = config
         self.env_prefix = env_prefix
@@ -443,6 +498,11 @@ class ConfigParserOverride:
         :param config_parser: Optional ConfigParser object to be used,
             defaults to None.
         :type config_parser: configparser.ConfigParser, optional
+        :param case_sensetive_overrides: Flag to indicate if overrides should
+            be case sensitive.
+        :type case_sensetive_overrides: bool, optional
+        :param optionxform: Optional function to transform option strings.
+        :type optionxform: _optionxform_fn | None, optional
         :param overrides: Keyword arguments to directly override configuration values.
         :type overrides: dict[str, str | None]
         """
@@ -511,9 +571,9 @@ class ConfigParserOverride:
 
         .. code-block:: python
 
-            >>> parser_override = ConfigParserOverride(TEST_KEY='value')
+            >>> parser_override = ConfigParserOverride(test_option='value')
             >>> config = parser_override.read(['example.ini'])
-            >>> config.get('DEFAULT', 'TEST_KEY')
+            >>> config.get('DEFAULT', 'test_option')
             'value'
 
 
@@ -541,9 +601,9 @@ class ConfigParserOverride:
 
         .. code-block:: python
 
-            >>> config = ConfigParserOverride(TEST_KEY='value')
+            >>> config = ConfigParserOverride(test_option='value')
             >>> config.read(['example.ini'])
-            >>> config.get('DEFAULT', 'test_key')
+            >>> config.get('DEFAULT', 'test_option')
             'value'
 
         Can also be used like just like regular ConfigParser:
