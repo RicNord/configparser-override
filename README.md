@@ -96,11 +96,11 @@ The format for environment variable names is as follows:
 For example, to override the option `key1` in `section1` with a prefix
 `MYAPP_`, the environment variable would be `MYAPP_SECTION1__KEY1`.
 
-## Platform dependency
+## Platform Dependency
 
-Different Operating systems handle environment variables differently. Linux is
-case sensitive while Windows is not see [os.environ
-docs](https://docs.python.org/3/library/os.html#os.environ). Hence it is safest
+Different operating systems handle environment variables differently. Linux is
+case sensitive while Windows is not. See [os.environ
+docs](https://docs.python.org/3/library/os.html#os.environ). Hence, it is safest
 to always use capitalized environment variables to avoid any unexpected
 behavior.
 
@@ -109,27 +109,27 @@ behavior.
 In order to avoid any unanticipated issues and make your code safe to run on
 any platform, follow these rules:
 
-- `Environment variables` should be `UPPERCASE`
-  - `Environment variable prefix` should be `UPPERCASE`
-- `Sections` in config.ini files should be `lowercase`
-  - One exception is the `DEFAULT section` which by convention is `UPPERCASE`
-- `Options` in config.ini files should be `lowercase`
-- `Directly assigned argument` should be `lowercase`
+- `Environment variables` should be `UPPERCASE`.
+  - `Environment variable prefix` should be `UPPERCASE`.
+- `Sections` in config.ini files should be `lowercase`.
+  - One exception is the `DEFAULT` section which by convention is `UPPERCASE`.
+- `Options` in config.ini files should be `lowercase`.
+- `Directly assigned arguments` should be `lowercase`.
 
-### Default case sensitivity handling
+### Default Case Sensitivity Handling
 
-By default `ConfigParserOverride` stores everything as lower-case, with an
+By default, `ConfigParserOverride` stores everything as lowercase, with an
 exception of `Section` headers that are read from configuration files, where
 the existing casing is honored. However, if you want to override something
 with an environment variable or direct assignment, it will recognize the
-exiting casing of the section and continue to use that even though you use
+existing casing of the section and continue to use that even though you use
 uppercase or something else in the override.
 
-It is highly discourage but you can make `ConfigParserOverride` case-sensitive,
-by initializing it with the argument `case_sensetive_overrides = True`.
+It is highly discouraged, but you can make `ConfigParserOverride` case-sensitive
+by initializing it with the argument `case_sensitive_overrides=True`.
 
 ```python
 from configparser_override import ConfigParserOverride
 
-parser = ConfigParserOverride(env_prefix="MYAPP_", case_sensetive_overrides=True)
+parser = ConfigParserOverride(env_prefix="MYAPP_", case_sensitive_overrides=True)
 ```

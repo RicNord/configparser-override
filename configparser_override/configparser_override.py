@@ -41,7 +41,7 @@ class Strategy(ABC):
         config: configparser.ConfigParser,
         env_prefix: str,
         overrides: Mapping[str, str | None],
-        case_sensetive_overrides: bool = False,
+        case_sensitive_overrides: bool = False,
         optionxform_fn: _optionxform_fn | None = None,
     ):
         """
@@ -53,16 +53,16 @@ class Strategy(ABC):
         :type env_prefix: str
         :param overrides: Mapping of override keys and values.
         :type overrides: Mapping[str, str | None]
-        :param case_sensetive_overrides: Flag to indicate if overrides should
+        :param case_sensitive_overrides: Flag to indicate if overrides should
             be case sensitive.
-        :type case_sensetive_overrides: bool, optional
+        :type case_sensitive_overrides: bool, optional
         :param optionxform_fn: Optional function to transform option strings.
         :type optionxform_fn: _optionxform_fn | None, optional
         """
         self._config = config
         self._env_prefix = env_prefix
         self._overrides = overrides
-        self.case_sensetive_overrides = case_sensetive_overrides
+        self.case_sensitive_overrides = case_sensitive_overrides
         if optionxform_fn is None:
             self.optionxform_fn = _lowercase_optionxform
         else:
@@ -123,7 +123,7 @@ class Strategy(ABC):
             This method is aware of case-sensitivity setting
 
         """
-        if self.case_sensetive_overrides:
+        if self.case_sensitive_overrides:
             if section == self._config.default_section:
                 return f"{prefix}{option}" if prefix != "" else option
             else:
@@ -157,7 +157,7 @@ class Strategy(ABC):
             env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
             for key, value in env_vars.items():
                 section, option = self.parse_key(key)
-                if self.case_sensetive_overrides:
+                if self.case_sensitive_overrides:
                     if not self.has_section(section):
                         self._config.add_section(section=section)
                     self._config.set(section=section, option=option, value=value)
@@ -211,7 +211,7 @@ class Strategy(ABC):
             This method is aware of case-sensitivity setting
 
         """
-        if self.case_sensetive_overrides:
+        if self.case_sensitive_overrides:
             return (
                 self._config.has_section(section)
                 or section == self._config.default_section
@@ -245,7 +245,7 @@ class Strategy(ABC):
         if create_new_options:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
-                if self.case_sensetive_overrides:
+                if self.case_sensitive_overrides:
                     if not self.has_section(section):
                         self._config.add_section(section=section)
                     self._config.set(section=section, option=option, value=value)
@@ -262,7 +262,7 @@ class Strategy(ABC):
         else:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
-                if self.case_sensetive_overrides:
+                if self.case_sensitive_overrides:
                     if self.has_section(section) and self._config.has_option(
                         section, option
                     ):
@@ -349,7 +349,7 @@ class StrategyFactory:
         create_new_from_env_prefix: bool,
         create_new_from_direct: bool,
         overrides: dict[str, str | None],
-        case_sensetive_overrides: bool = False,
+        case_sensitive_overrides: bool = False,
         optionxform: _optionxform_fn | None = None,
     ):
         """
@@ -366,9 +366,9 @@ class StrategyFactory:
         :type create_new_from_direct: bool
         :param overrides: Dictionary of override keys and values.
         :type overrides: dict[str, str | None]
-        :param case_sensetive_overrides: Flag to indicate if overrides should
+        :param case_sensitive_overrides: Flag to indicate if overrides should
             be case sensitive.
-        :type case_sensetive_overrides: bool, optional
+        :type case_sensitive_overrides: bool, optional
         :param optionxform: Optional function to transform option strings.
         :type optionxform: _optionxform_fn | None, optional
         """
@@ -377,7 +377,7 @@ class StrategyFactory:
         self.create_new_from_env_prefix = create_new_from_env_prefix
         self.create_new_from_direct = create_new_from_direct
         self.overrides = overrides
-        self.case_sensetive_overrides = case_sensetive_overrides
+        self.case_sensitive_overrides = case_sensitive_overrides
         self.optionxform = optionxform
 
     def get_strategy(self) -> Strategy:
@@ -425,7 +425,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
         elif NO_PREFIX_NEW_DIRECT:
@@ -433,7 +433,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
         elif PREFIX_NO_NEW:
@@ -441,7 +441,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
         elif PREFIX_NEW_ENV:
@@ -449,7 +449,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
         elif PREFIX_NEW_DIRECT:
@@ -457,7 +457,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
         elif PREFIX_NEW_ENV_NEW_DIRECT:
@@ -465,7 +465,7 @@ class StrategyFactory:
                 self.config,
                 self.env_prefix,
                 self.overrides,
-                self.case_sensetive_overrides,
+                self.case_sensitive_overrides,
                 self.optionxform,
             )
 
@@ -479,7 +479,7 @@ class ConfigParserOverride:
         create_new_from_env_prefix: bool = False,
         create_new_from_direct: bool = True,
         config_parser: configparser.ConfigParser | None = None,
-        case_sensetive_overrides: bool = False,
+        case_sensitive_overrides: bool = False,
         optionxform: _optionxform_fn | None = None,
         **overrides: str | None,
     ):
@@ -498,9 +498,9 @@ class ConfigParserOverride:
         :param config_parser: Optional ConfigParser object to be used,
             defaults to None.
         :type config_parser: configparser.ConfigParser, optional
-        :param case_sensetive_overrides: Flag to indicate if overrides should
+        :param case_sensitive_overrides: Flag to indicate if overrides should
             be case sensitive.
-        :type case_sensetive_overrides: bool, optional
+        :type case_sensitive_overrides: bool, optional
         :param optionxform: Optional function to transform option strings.
         :type optionxform: _optionxform_fn | None, optional
         :param overrides: Keyword arguments to directly override configuration values.
@@ -511,7 +511,7 @@ class ConfigParserOverride:
         self.create_new_from_env_prefix = create_new_from_env_prefix
         self.create_new_from_direct = create_new_from_direct
         self.overrides = overrides
-        self.case_sensetive_overrides = case_sensetive_overrides
+        self.case_sensitive_overrides = case_sensitive_overrides
         self.optionxform = optionxform
 
         if self.create_new_from_env_prefix:
@@ -540,7 +540,7 @@ class ConfigParserOverride:
             self.create_new_from_env_prefix,
             self.create_new_from_direct,
             self.overrides,
-            self.case_sensetive_overrides,
+            self.case_sensitive_overrides,
             self.optionxform,
         ).get_strategy()
 

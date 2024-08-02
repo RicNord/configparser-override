@@ -337,7 +337,7 @@ def test_config_parser_override_with_combined_overrides_case_sensitive(monkeypat
         env_prefix=TEST_ENV_PREFIX,
         create_new_from_env_prefix=True,
         create_new_from_direct=True,
-        case_sensetive_overrides=True,
+        case_sensitive_overrides=True,
         SECTION1__option1="override_value1",
     )
 
@@ -435,7 +435,7 @@ def test_combined_case_sensitive_overrides(monkeypatch, config_file):
         SECTION1__KEY1="direct_override_value1",
         create_new_from_direct=True,
         create_new_from_env_prefix=True,
-        case_sensetive_overrides=True,
+        case_sensitive_overrides=True,
     )
     config = parser.read(filenames=config_file)
 
