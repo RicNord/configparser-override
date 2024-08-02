@@ -23,8 +23,8 @@ class OverrideStrategyNotImplementedError(Exception):
     pass
 
 
-def _lowercase_optionxform(option: str) -> str:
-    return option.lower()
+def _lowercase_optionxform(optionstr: str) -> str:
+    return optionstr.lower()
 
 
 class Strategy(ABC):
@@ -455,16 +455,14 @@ class ConfigParserOverride:
         self.optionxform = optionxform
 
         if self.create_new_from_env_prefix:
-            assert (
-                self.env_prefix
-            ), "To set new configuration options from environment variables a prefix has to be used!"
+            assert self.env_prefix, "To set new configuration options from environment variables a prefix has to be used!"
 
         # Configure ConfigParser and align optionxform for consistency in later
         # inferance for overrides
         if config_parser is None:
             self._config = configparser.ConfigParser()
             if self.optionxform is not None:
-                self._config.optionxform = self.optionxform
+                self._config.optionxform = self.optionxform  # type: ignore
         else:
             self._config = config_parser
             self.optionxform = self._config.optionxform
