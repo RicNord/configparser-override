@@ -5,12 +5,16 @@ import enum
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterable, Mapping
+from typing import TYPE_CHECKING, Iterable, Mapping, Protocol
 
 if TYPE_CHECKING:
     from _typeshed import StrOrBytesPath
 
 logger = logging.getLogger(__name__)
+
+
+class _optionxform_fn(Protocol):
+    def __call__(self, optionstr: str) -> str: ...
 
 
 class OverrideStrategyNotImplementedError(Exception):
@@ -19,12 +23,18 @@ class OverrideStrategyNotImplementedError(Exception):
     pass
 
 
+def _lowercase_optionxform(option: str) -> str:
+    return option.lower()
+
+
 class Strategy(ABC):
     def __init__(
         self,
         config: configparser.ConfigParser,
         env_prefix: str,
         overrides: Mapping[str, str | None],
+        case_sensetive_overrides: bool = False,
+        optionxform_fn: _optionxform_fn | None = None,
     ):
         """
         Initialize the base Strategy class.
@@ -39,6 +49,11 @@ class Strategy(ABC):
         self._config = config
         self._env_prefix = env_prefix
         self._overrides = overrides
+        self.case_sensetive_overrides = case_sensetive_overrides
+        if optionxform_fn is None:
+            self.optionxform_fn = _lowercase_optionxform
+        else:
+            self.optionxform_fn = optionxform_fn
 
     @abstractmethod
     def execute(self):
@@ -64,8 +79,8 @@ class Strategy(ABC):
         """
         Parse a given key to extract the section and option.
 
-        ConfigParser stores all options as lowercase, hence the option part is
-        standardized to be lowercase.
+        ConfigParser stores all options as lowercase by default, hence the option part
+        is standardized to be lowercase unless a `optionxform` functions is specified.
 
         :param key: The key to parse.
         :type key: str
@@ -74,8 +89,32 @@ class Strategy(ABC):
         """
         parts = key.split("__", 1)
         if len(parts) == 1:
-            return self._config.default_section, parts[0].lower()
-        return parts[0], parts[1].lower()
+            return self._config.default_section, self.optionxform_fn(parts[0])
+        return parts[0], self.optionxform_fn(parts[1])
+
+    def decide_env_var(self, prefix: str, section: str, option: str) -> str:
+        if self.case_sensetive_overrides:
+            if section == self._config.default_section:
+                return f"{prefix}{option}" if prefix != "" else option
+            else:
+                return (
+                    f"{prefix}{section}__{option}"
+                    if prefix != ""
+                    else f"{section}__{option}"
+                )
+        else:
+            if section.lower() == self._config.default_section.lower():
+                return (
+                    f"{prefix.upper()}{option.upper()}"
+                    if prefix != ""
+                    else option.upper()
+                )
+            else:
+                return (
+                    f"{prefix.upper()}{section.upper()}__{option.upper()}"
+                    if prefix != ""
+                    else f"{section.upper()}__{option.upper()}"
+                )
 
     def override_env(self, create_new_options: bool):
         """
@@ -88,21 +127,24 @@ class Strategy(ABC):
             env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
             for key, value in env_vars.items():
                 section, option = self.parse_key(key)
-                if (
-                    not self._config.has_section(section=section)
-                    and section != self._config.default_section
-                ):
-                    self._config.add_section(section=section)
-                self._config.set(section=section, option=option, value=value)
+                if self.case_sensetive_overrides:
+                    if not self.has_section(section):
+                        self._config.add_section(section=section)
+                    self._config.set(section=section, option=option, value=value)
+                else:
+                    if not self.has_section(section):
+                        self._config.add_section(section=section.lower())
+                        self._config.set(
+                            section=section.lower(), option=option, value=value
+                        )
+                    else:
+                        _section = self.get_existing_section_case_insensitive(section)
+                        self._config.set(section=_section, option=option, value=value)
 
         else:
             for section in self._config.sections():
                 for option in self._config[section]:
-                    env_var = (
-                        f"{self._env_prefix}{section}__{option.upper()}"
-                        if self._env_prefix != ""
-                        else f"{section}__{option.upper()}"
-                    )
+                    env_var = self.decide_env_var(self._env_prefix, section, option)
                     if env_var in os.environ:
                         _value = os.environ[env_var]
                         logger.debug(f"Override {section=}, {option=} with {env_var}")
@@ -112,10 +154,8 @@ class Strategy(ABC):
 
             _default_section = self._config.default_section
             for option in self._config.defaults():
-                env_var = (
-                    f"{self._env_prefix}{option.upper()}"
-                    if self._env_prefix != ""
-                    else f"{option.upper()}"
+                env_var = self.decide_env_var(
+                    self._env_prefix, _default_section, option
                 )
                 if env_var in os.environ:
                     _value = os.environ[env_var]
@@ -128,6 +168,23 @@ class Strategy(ABC):
                 else:
                     logger.debug(f"Environment variable {env_var} not set")
 
+    def has_section(self, section: str) -> bool:
+        if self.case_sensetive_overrides:
+            return (
+                self._config.has_section(section)
+                or section == self._config.default_section
+            )
+        _sections = {section.lower(): section for section in self._config.sections()}
+        exists = section.lower() in _sections
+        is_default = self._config.default_section.lower() == section.lower()
+        return exists or is_default
+
+    def get_existing_section_case_insensitive(self, section: str) -> str:
+        if section.lower() == self._config.default_section.lower():
+            return self._config.default_section
+        _sections = {section.lower(): section for section in self._config.sections()}
+        return _sections[section.lower()]
+
     def override_direct(self, create_new_options: bool):
         """
         Override configuration values using direct overrides.
@@ -138,25 +195,49 @@ class Strategy(ABC):
         if create_new_options:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
-                if (
-                    not self._config.has_section(section=section)
-                    and section != self._config.default_section
-                ):
-                    self._config.add_section(section=section)
-                self._config.set(section=section, option=option, value=value)
+                if self.case_sensetive_overrides:
+                    if not self.has_section(section):
+                        self._config.add_section(section=section)
+                    self._config.set(section=section, option=option, value=value)
+                else:
+                    if not self.has_section(section):
+                        self._config.add_section(section=section.lower())
+                        self._config.set(
+                            section=section.lower(), option=option, value=value
+                        )
+                    else:
+                        _section = self.get_existing_section_case_insensitive(section)
+                        self._config.set(section=_section, option=option, value=value)
 
         else:
             for key, value in self._overrides.items():
                 section, option = self.parse_key(key)
-                if self._config.has_section(section) and self._config.has_option(
-                    section, option
-                ):
-                    logger.debug(
-                        f"Override {section=}, {option=} with direct assignment"
-                    )
-                    self._config.set(section=section, option=option, value=value)
+                if self.case_sensetive_overrides:
+                    if self.has_section(section) and self._config.has_option(
+                        section, option
+                    ):
+                        logger.debug(
+                            f"Override {section=}, {option=} with direct assignment"
+                        )
+                        self._config.set(section=section, option=option, value=value)
+                    else:
+                        logger.debug(
+                            f"New direct assignment {section=} {option=} ignored"
+                        )
                 else:
-                    logger.debug(f"New direct assignment {section=} {option=} ignored")
+                    if self.has_section(section):
+                        section = self.get_existing_section_case_insensitive(section)
+                        if self._config.has_option(section, option):
+                            logger.debug(
+                                f"Override {section=}, {option=} with direct assignment"
+                            )
+                            self._config.set(
+                                section=section, option=option, value=value
+                            )
+                        else:
+                            logger.debug(
+                                f"New direct assignment {section=} {option=} ignored"
+                            )
 
 
 class NoPrefixNoNewStrategy(Strategy):
@@ -218,6 +299,8 @@ class StrategyFactory:
         create_new_from_env_prefix: bool,
         create_new_from_direct: bool,
         overrides: dict[str, str | None],
+        case_sensetive_overrides: bool = False,
+        optionxform: _optionxform_fn | None = None,
     ):
         """
         Initialize the StrategyFactory.
@@ -239,6 +322,8 @@ class StrategyFactory:
         self.create_new_from_env_prefix = create_new_from_env_prefix
         self.create_new_from_direct = create_new_from_direct
         self.overrides = overrides
+        self.case_sensetive_overrides = case_sensetive_overrides
+        self.optionxform = optionxform
 
     def get_strategy(self) -> Strategy:
         """
@@ -282,27 +367,51 @@ class StrategyFactory:
 
         if NO_PREFIX_NO_NEW:
             return OverrideStrategies.NO_PREFIX_NO_NEW.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
         elif NO_PREFIX_NEW_DIRECT:
             return OverrideStrategies.NO_PREFIX_NEW_DIRECT.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
         elif PREFIX_NO_NEW:
             return OverrideStrategies.PREFIX_NO_NEW.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
         elif PREFIX_NEW_ENV:
             return OverrideStrategies.PREFIX_NEW_ENV.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
         elif PREFIX_NEW_DIRECT:
             return OverrideStrategies.PREFIX_NEW_DIRECT.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
         elif PREFIX_NEW_ENV_NEW_DIRECT:
             return OverrideStrategies.PREFIX_NEW_ENV_NEW_DIRECT.value(
-                self.config, self.env_prefix, self.overrides
+                self.config,
+                self.env_prefix,
+                self.overrides,
+                self.case_sensetive_overrides,
+                self.optionxform,
             )
 
         raise OverrideStrategyNotImplementedError()
@@ -315,6 +424,8 @@ class ConfigParserOverride:
         create_new_from_env_prefix: bool = False,
         create_new_from_direct: bool = True,
         config_parser: configparser.ConfigParser | None = None,
+        case_sensetive_overrides: bool = False,
+        optionxform: _optionxform_fn | None = None,
         **overrides: str | None,
     ):
         """
@@ -340,14 +451,23 @@ class ConfigParserOverride:
         self.create_new_from_env_prefix = create_new_from_env_prefix
         self.create_new_from_direct = create_new_from_direct
         self.overrides = overrides
+        self.case_sensetive_overrides = case_sensetive_overrides
+        self.optionxform = optionxform
 
         if self.create_new_from_env_prefix:
-            assert self.env_prefix, "To set new configuration options from environment variables a prefix has to be used!"
+            assert (
+                self.env_prefix
+            ), "To set new configuration options from environment variables a prefix has to be used!"
 
+        # Configure ConfigParser and align optionxform for consistency in later
+        # inferance for overrides
         if config_parser is None:
             self._config = configparser.ConfigParser()
+            if self.optionxform is not None:
+                self._config.optionxform = self.optionxform
         else:
             self._config = config_parser
+            self.optionxform = self._config.optionxform
 
     def _get_override_strategy(self) -> Strategy:
         """
@@ -362,6 +482,8 @@ class ConfigParserOverride:
             self.create_new_from_env_prefix,
             self.create_new_from_direct,
             self.overrides,
+            self.case_sensetive_overrides,
+            self.optionxform,
         ).get_strategy()
 
     def read(
