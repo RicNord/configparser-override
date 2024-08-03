@@ -88,10 +88,16 @@ class Strategy(ABC):
         :return: Dictionary of environment variables with the prefix removed.
         :rtype: dict[str, str]
         """
+        if self.case_sensitive_overrides:
+            return {
+                key[len(prefix) :]: value
+                for key, value in os.environ.items()
+                if key.startswith(prefix)
+            }
         return {
             key[len(prefix) :]: value
             for key, value in os.environ.items()
-            if key.startswith(prefix)
+            if key.startswith(prefix.upper())
         }
 
     def parse_key(self, key: str) -> tuple[str, str]:

@@ -792,3 +792,22 @@ def test_custom_optionxform_sensetive(monkeypatch, config_file):
     assert config["SECTION1"]["KEY1"] == "direct_override_value1"
     assert config["SECTION1"]["key2"] == "env_override_value2"
     assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+
+
+def test_combined_case_sensitive_overrides_plus_prefix(monkeypatch, config_file):
+    monkeypatch.setenv(
+        f"{TEST_ENV_PREFIX.lower()}SECTION1__key2", "env_override_value2"
+    )
+
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX.lower(),
+        SECTION1__KEY1="direct_override_value1",
+        create_new_from_direct=False,
+        create_new_from_env_prefix=False,
+        case_sensitive_overrides=True,
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["key1"] == "direct_override_value1"
+    assert config["SECTION1"]["key2"] == "env_override_value2"
+    assert config["SECTION2"]["key3"] == "value3"  # Not overridden
