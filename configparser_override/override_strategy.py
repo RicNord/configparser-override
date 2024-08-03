@@ -87,23 +87,6 @@ class Strategy(ABC):
             if key.startswith(prefix.upper())
         }
 
-    def parse_key(self, key: str) -> tuple[str, str]:
-        """
-        Parse a given key to extract the section and option.
-
-        ConfigParser stores all options as lowercase by default, hence the option part
-        is standardized to be lowercase unless a `optionxform` functions is specified.
-
-        :param key: The key to parse.
-        :type key: str
-        :return: A tuple containing the section and option.
-        :rtype: tuple[str, str]
-        """
-        parts = key.split("__", 1)
-        if len(parts) == 1:
-            return self._config.default_section, self.optionxform_fn(parts[0])
-        return parts[0], self.optionxform_fn(parts[1])
-
     def decide_env_var(self, prefix: str, section: str, option: str) -> str:
         """
         Determine the appropriate environment variable name based on the given
@@ -136,43 +119,22 @@ class Strategy(ABC):
             )
         return env_var
 
-    def override_env(self, create_new_options: bool):
+    def parse_key(self, key: str) -> tuple[str, str]:
         """
-        Override configuration values using environment variables.
+        Parse a given key to extract the section and option.
 
-        :param create_new_options: Flag to indicate if new options can be created.
-        :type create_new_options: bool
+        ConfigParser stores all options as lowercase by default, hence the option part
+        is standardized to be lowercase unless a `optionxform` functions is specified.
+
+        :param key: The key to parse.
+        :type key: str
+        :return: A tuple containing the section and option.
+        :rtype: tuple[str, str]
         """
-        if create_new_options:
-            env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
-            for key, value in env_vars.items():
-                self.override_and_add_new(key=key, value=value)
-        else:
-            for section in self._config.sections():
-                for option in self._config[section]:
-                    env_var = self.decide_env_var(self._env_prefix, section, option)
-                    if env_var in os.environ:
-                        _value = os.environ[env_var]
-                        logger.debug(f"Override {section=}, {option=} with {env_var}")
-                        self._config.set(section=section, option=option, value=_value)
-                    else:
-                        logger.debug(f"Environment variable {env_var} not set")
-
-            _default_section = self._config.default_section
-            for option in self._config.defaults():
-                env_var = self.decide_env_var(
-                    self._env_prefix, _default_section, option
-                )
-                if env_var in os.environ:
-                    _value = os.environ[env_var]
-                    logger.debug(
-                        f"Override section={_default_section}, {option=} with {env_var}"
-                    )
-                    self._config.set(
-                        section=_default_section, option=option, value=_value
-                    )
-                else:
-                    logger.debug(f"Environment variable {env_var} not set")
+        parts = key.split("__", 1)
+        if len(parts) == 1:
+            return self._config.default_section, self.optionxform_fn(parts[0])
+        return parts[0], self.optionxform_fn(parts[1])
 
     def has_section(self, section: str) -> bool:
         """
@@ -227,6 +189,44 @@ class Strategy(ABC):
             else:
                 _section = self.get_existing_section_case_insensitive(section)
                 self._config.set(section=_section, option=option, value=value)
+
+    def override_env(self, create_new_options: bool):
+        """
+        Override configuration values using environment variables.
+
+        :param create_new_options: Flag to indicate if new options can be created.
+        :type create_new_options: bool
+        """
+        if create_new_options:
+            env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
+            for key, value in env_vars.items():
+                self.override_and_add_new(key=key, value=value)
+        else:
+            for section in self._config.sections():
+                for option in self._config[section]:
+                    env_var = self.decide_env_var(self._env_prefix, section, option)
+                    if env_var in os.environ:
+                        _value = os.environ[env_var]
+                        logger.debug(f"Override {section=}, {option=} with {env_var}")
+                        self._config.set(section=section, option=option, value=_value)
+                    else:
+                        logger.debug(f"Environment variable {env_var} not set")
+
+            _default_section = self._config.default_section
+            for option in self._config.defaults():
+                env_var = self.decide_env_var(
+                    self._env_prefix, _default_section, option
+                )
+                if env_var in os.environ:
+                    _value = os.environ[env_var]
+                    logger.debug(
+                        f"Override section={_default_section}, {option=} with {env_var}"
+                    )
+                    self._config.set(
+                        section=_default_section, option=option, value=_value
+                    )
+                else:
+                    logger.debug(f"Environment variable {env_var} not set")
 
     def override_direct(self, create_new_options: bool):
         """
