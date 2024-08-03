@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class _optionxform_fn(Protocol):
-    def __call__(self, optionstr: str) -> str: ... # pragma: no cover
+    def __call__(self, optionstr: str) -> str: ...  # pragma: no cover
 
 
 class OverrideStrategyNotImplementedError(Exception):

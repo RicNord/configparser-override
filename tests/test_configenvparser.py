@@ -15,7 +15,6 @@ from configparser_override.configparser_override import (
     SectionNotFound,
     StrategyFactory,
     _lowercase_optionxform,
-    _optionxform_fn,
 )
 
 TEST_ENV_PREFIX = "TEST_"
@@ -424,6 +423,7 @@ def test_case_insensitive_lower_direct_multi_override(config_file):
     assert config["SECTION1"]["key2"] == "value2"  # Not overridden
     assert config["SECTION2"]["key3"] == "direct_override_value3"
 
+
 def test_case_insensitive_lower_direct_not_new(config_file):
     parser = ConfigParserOverride(
         env_prefix=TEST_ENV_PREFIX,
@@ -436,7 +436,7 @@ def test_case_insensitive_lower_direct_not_new(config_file):
     assert config["SECTION1"]["key1"] == "value1"  # Not overridden
     assert config["SECTION1"]["key2"] == "value2"  # Not overridden
     assert config["SECTION2"]["key3"] == "value3"  # Not overridden
-    assert config.has_section("section3") == False
+    assert config.has_section("section3") is False
 
 
 def test_combined_case_insensitive_overrides(monkeypatch, config_file):
