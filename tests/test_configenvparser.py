@@ -12,7 +12,10 @@ from configparser_override.configparser_override import (
     PrefixNewEnvNewDirectStrategy,
     PrefixNewEnvStrategy,
     PrefixNoNewStrategy,
+    SectionNotFound,
     StrategyFactory,
+    _lowercase_optionxform,
+    _optionxform_fn,
 )
 
 TEST_ENV_PREFIX = "TEST_"
@@ -409,6 +412,33 @@ def test_case_insensitive_lower_direct_override(config_file):
     assert config["SECTION2"]["key3"] == "value3"  # Not overridden
 
 
+def test_case_insensitive_lower_direct_multi_override(config_file):
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX,
+        section1__KEY1="direct_override_value1",
+        section2__KEY3="direct_override_value3",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["key1"] == "direct_override_value1"
+    assert config["SECTION1"]["key2"] == "value2"  # Not overridden
+    assert config["SECTION2"]["key3"] == "direct_override_value3"
+
+def test_case_insensitive_lower_direct_not_new(config_file):
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX,
+        create_new_from_direct=False,
+        section3__KEY3="direct_override_value3",
+        section3__KEY4="direct_override_value4",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["key1"] == "value1"  # Not overridden
+    assert config["SECTION1"]["key2"] == "value2"  # Not overridden
+    assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+    assert config.has_section("section3") == False
+
+
 def test_combined_case_insensitive_overrides(monkeypatch, config_file):
     monkeypatch.setenv(f"{TEST_ENV_PREFIX}section1__KEY2", "env_override_value2")
 
@@ -448,6 +478,29 @@ def test_combined_case_sensitive_overrides(monkeypatch, config_file):
         assert config["SECTION1"]["key1"] == "direct_override_value1"
         assert config["SECTION1"]["key2"] == "value2"
         assert config["section1"]["key2"] == "env_override_value2"
+        assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+
+
+def test_combined_case_sensitive_overrides_no_new(monkeypatch, config_file):
+    monkeypatch.setenv(f"{TEST_ENV_PREFIX}section1__KEY2", "env_override_value2")
+
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX,
+        SECTION1__KEY1="direct_override_value1",
+        create_new_from_direct=False,
+        create_new_from_env_prefix=False,
+        case_sensitive_overrides=True,
+    )
+    config = parser.read(filenames=config_file)
+
+    p = platform.system()
+    if p == "Windows":
+        assert config["SECTION1"]["key1"] == "direct_override_value1"
+        assert config["SECTION1"]["key2"] == "env_override_value2"
+        assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+    elif p == "Linux" or p == "Darwin":
+        assert config["SECTION1"]["key1"] == "direct_override_value1"
+        assert config["SECTION1"]["key2"] == "value2"
         assert config["SECTION2"]["key3"] == "value3"  # Not overridden
 
 
@@ -623,3 +676,119 @@ def test_custom_config_parser_with_custom_default_section_override(
 
     assert config.defaults()["default_key2"] == "direct_override_default_value2"
     assert config.defaults()["default_key1"] == "env_value1"
+
+
+def test_lowercase_optionxform():
+    assert _lowercase_optionxform("TEST") == "test"
+    assert _lowercase_optionxform("TesT") == "test"
+    assert _lowercase_optionxform("test") == "test"
+
+
+def test_parse_key_case_insensitive():
+    config = configparser.ConfigParser()
+    strategy = NoPrefixNoNewStrategy(config, "", {})
+    section, option = strategy.parse_key("SECTION__OPTION")
+    assert section == "SECTION"
+    assert option == "option"
+
+
+def test_decide_env_var_case_insensitive():
+    config = configparser.ConfigParser()
+    strategy = NoPrefixNoNewStrategy(config, "", {})
+    env_var = strategy.decide_env_var("", "SECTION", "OPTION")
+    assert env_var == "SECTION__OPTION"
+
+
+def test_decide_env_var_case_sensitive():
+    config = configparser.ConfigParser()
+    strategy = NoPrefixNoNewStrategy(config, "", {}, case_sensitive_overrides=True)
+    env_var = strategy.decide_env_var("", "section", "OPTION")
+    assert env_var == "section__OPTION"
+
+
+def test_decide_env_var_case_insensitive_prefix():
+    config = configparser.ConfigParser()
+    strategy = PrefixNoNewStrategy(config, "PREFIX_", {})
+    env_var = strategy.decide_env_var("PREFIX_", "SECTION", "OPTION")
+    assert env_var == "PREFIX_SECTION__OPTION"
+
+
+def test_decide_env_var_case_sensitive_prefix():
+    config = configparser.ConfigParser()
+    strategy = PrefixNoNewStrategy(config, "PREFIX_", {}, case_sensitive_overrides=True)
+    env_var = strategy.decide_env_var("PREFIX_", "section", "OPTION")
+    assert env_var == "PREFIX_section__OPTION"
+
+
+def test_has_section_case_insensitive():
+    config = configparser.ConfigParser()
+    config.add_section("section")
+    strategy = NoPrefixNoNewStrategy(config, "", {})
+    assert strategy.has_section("section")
+    assert strategy.has_section("SECTION")
+
+
+def test_has_section_case_sensitive():
+    config = configparser.ConfigParser()
+    config.add_section("SECTION")
+    strategy = NoPrefixNoNewStrategy(config, "", {}, case_sensitive_overrides=True)
+    assert strategy.has_section("SECTION")
+    assert not strategy.has_section("section")
+
+
+def test_get_existing_section_case_insensitive():
+    config = configparser.ConfigParser()
+    config.add_section("section")
+    strategy = NoPrefixNoNewStrategy(config, "", {})
+    assert strategy.get_existing_section_case_insensitive("SECTION") == "section"
+
+
+def test_get_existing_section_case_sensitive():
+    config = configparser.ConfigParser()
+    config.add_section("SECTION")
+    strategy = NoPrefixNoNewStrategy(config, "", {})
+    with pytest.raises(SectionNotFound):
+        strategy.get_existing_section_case_insensitive("NOT_A_SECTION")
+
+
+def test_collect_env_vars_with_prefix(monkeypatch):
+    monkeypatch.setenv("PREFIX_SECTION__OPTION", "value")
+    strategy = NoPrefixNoNewStrategy(configparser.ConfigParser(), "PREFIX_", {})
+    env_vars = strategy.collect_env_vars_with_prefix("PREFIX_")
+    assert env_vars == {"SECTION__OPTION": "value"}
+
+
+def test_custom_optionxform_insensetive(monkeypatch, config_file):
+    monkeypatch.setenv(f"{TEST_ENV_PREFIX}SECTION1__KEY2", "env_override_value2")
+
+    def customform(optionstr: str) -> str:
+        return optionstr
+
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX,
+        optionxform=customform,
+        section1__key1="direct_override_value1",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["key1"] == "direct_override_value1"
+    assert config["SECTION1"]["key2"] == "env_override_value2"
+    assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+
+
+def test_custom_optionxform_sensetive(monkeypatch, config_file):
+    monkeypatch.setenv(f"{TEST_ENV_PREFIX}SECTION1__KEY2", "env_override_value2")
+
+    def customform(optionstr: str) -> str:
+        return optionstr
+
+    parser = ConfigParserOverride(
+        env_prefix=TEST_ENV_PREFIX,
+        optionxform=customform,
+        SECTION1__KEY1="direct_override_value1",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["KEY1"] == "direct_override_value1"
+    assert config["SECTION1"]["key2"] == "env_override_value2"
+    assert config["SECTION2"]["key3"] == "value3"  # Not overridden
