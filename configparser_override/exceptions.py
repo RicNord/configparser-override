@@ -17,3 +17,17 @@ class SectionNotFound(ConfigParserOverrideError):
     """Exception raised when a section is not found in the ConfigParser"""
 
     pass
+
+
+class ConversionError(ConfigParserOverrideError):
+    """Exception raised for errors of casting a string to typehinted value(s)"""
+
+    pass
+
+
+class LiteralEvalMiscast(ConfigParserOverrideError):
+    """
+    Exception raised when ast.literal_eval casts the string to a unexpected data type
+    """
+
+    pass
