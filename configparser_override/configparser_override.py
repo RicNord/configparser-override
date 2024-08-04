@@ -164,4 +164,35 @@ class ConfigParserOverride:
         return self._config
 
     def to_dataclass(self, dataclass: _dataclass) -> _dataclass:
+        """
+        Convert the configuration data to a dataclass instance.
+
+        Can be useful to validate that the configuration adheres to the expected format
+        and leverage various typing frameworks, eg. integrations with your text editor.
+
+        :param dataclass: The dataclass type to convert the configuration data into.
+        :type dataclass: _dataclass
+        :return: An instance of the dataclass populated with the configuration data.
+        :rtype: _dataclass
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> from dataclasses import dataclass
+
+            >>> @dataclass
+            ... class Section1:
+            ...     key: str
+
+            >>> @dataclass
+            ... class ExampleConfig:
+            ...     section1: Section1
+
+            >>> config_parser_override = ConfigParserOverride(section1__key="a string")
+            >>> config_parser_override.read()
+            >>> config_as_dataclass = config_parser_override.to_dataclass(ExampleConfig)
+            >>> assert config_as_dataclass.section1.key == "a string" # True
+        """
+
         return ConfigConverter(self._config).config_to_dataclass(dataclass)
