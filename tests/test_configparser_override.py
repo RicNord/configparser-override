@@ -1,5 +1,6 @@
 import configparser
 import platform
+from dataclasses import dataclass
 
 import pytest
 
@@ -509,3 +510,27 @@ def test_combined_case_sensitive_overrides_plus_prefix(monkeypatch, config_file)
     assert config["SECTION1"]["key1"] == "direct_override_value1"
     assert config["SECTION1"]["key2"] == "env_override_value2"
     assert config["SECTION2"]["key3"] == "value3"  # Not overridden
+
+
+def test_config_to_dataclass(config_file):
+    @dataclass
+    class Section1:
+        key1: str
+        key2: str
+
+    @dataclass
+    class Section2:
+        key3: str
+
+    @dataclass
+    class ConfigFile:
+        SECTION1: Section1
+        SECTION2: Section2
+
+    parser = ConfigParserOverride()
+    parser.read(filenames=config_file)
+
+    dataclass_config = parser.to_dataclass(ConfigFile)
+    assert dataclass_config.SECTION1.key1 == "value1"
+    assert dataclass_config.SECTION1.key2 == "value2"
+    assert dataclass_config.SECTION2.key3 == "value3"
