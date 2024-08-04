@@ -198,7 +198,11 @@ class Strategy(ABC):
         :type create_new_options: bool
         """
         if create_new_options:
-            env_vars = self.collect_env_vars_with_prefix(self._env_prefix)
+            env_vars = (
+                self.collect_env_vars_with_prefix(self._env_prefix)
+                if self._env_prefix != ""
+                else {}
+            )
             for key, value in env_vars.items():
                 self.override_and_add_new(key=key, value=value)
         else:
@@ -270,52 +274,32 @@ class Strategy(ABC):
                             )
 
 
-class NoPrefixNoNewStrategy(Strategy):
+class NewOptionsFromEnvStrategy(Strategy):
     def execute(self):
-        """Execute strategy: No prefix and no new options."""
-        self.override_env(create_new_options=False)
-        self.override_direct(create_new_options=False)
-
-
-class NoPrefixNewDirectStrategy(Strategy):
-    def execute(self):
-        """Execute strategy: No prefix and allow new direct options."""
-        self.override_env(create_new_options=False)
-        self.override_direct(create_new_options=True)
-
-
-class PrefixNoNewStrategy(Strategy):
-    def execute(self):
-        """Execute strategy: Prefix used and no new options."""
-        self.override_env(create_new_options=False)
-        self.override_direct(create_new_options=False)
-
-
-class PrefixNewEnvStrategy(Strategy):
-    def execute(self):
-        """Execute strategy: Prefix used and allow new environment options."""
         self.override_env(create_new_options=True)
         self.override_direct(create_new_options=False)
 
 
-class PrefixNewDirectStrategy(Strategy):
+class NewOptionsFromDirectStrategy(Strategy):
     def execute(self):
-        """Execute strategy: Prefix used and allow new direct options."""
         self.override_env(create_new_options=False)
         self.override_direct(create_new_options=True)
 
 
-class PrefixNewEnvNewDirectStrategy(Strategy):
+class NewOptionsFromDirectAndEnvStrategy(Strategy):
     def execute(self):
-        """Execute strategy: Prefix used and allow new environment and direct options."""
         self.override_env(create_new_options=True)
         self.override_direct(create_new_options=True)
+
+
+class NoNewOptionsStrategy(Strategy):
+    def execute(self):
+        self.override_env(create_new_options=False)
+        self.override_direct(create_new_options=False)
 
 
 class OverrideStrategies(enum.Enum):
-    NO_PREFIX_NO_NEW = NoPrefixNoNewStrategy
-    NO_PREFIX_NEW_DIRECT = NoPrefixNewDirectStrategy
-    PREFIX_NO_NEW = PrefixNoNewStrategy
-    PREFIX_NEW_ENV = PrefixNewEnvStrategy
-    PREFIX_NEW_DIRECT = PrefixNewDirectStrategy
-    PREFIX_NEW_ENV_NEW_DIRECT = PrefixNewEnvNewDirectStrategy
+    NEW_OPTIONS_FROM_ENV = NewOptionsFromEnvStrategy
+    NEW_OPTIONS_FROM_DIRECT = NewOptionsFromDirectStrategy
+    NEW_OPTIONS_FROM_DIRECT_AND_ENV = NewOptionsFromDirectAndEnvStrategy
+    NO_NEW_OPTIONS = NoNewOptionsStrategy

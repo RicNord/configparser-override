@@ -63,15 +63,12 @@ class StrategyFactory:
         :raises OverrideStrategyNotImplementedError: If no matching strategy is found.
         """
         strategies = {
-            (False, False, False): OverrideStrategies.NO_PREFIX_NO_NEW,
-            (False, False, True): OverrideStrategies.NO_PREFIX_NEW_DIRECT,
-            (True, False, False): OverrideStrategies.PREFIX_NO_NEW,
-            (True, True, False): OverrideStrategies.PREFIX_NEW_ENV,
-            (True, False, True): OverrideStrategies.PREFIX_NEW_DIRECT,
-            (True, True, True): OverrideStrategies.PREFIX_NEW_ENV_NEW_DIRECT,
+            (True, False): OverrideStrategies.NEW_OPTIONS_FROM_ENV,
+            (False, True): OverrideStrategies.NEW_OPTIONS_FROM_DIRECT,
+            (True, True): OverrideStrategies.NEW_OPTIONS_FROM_DIRECT_AND_ENV,
+            (False, False): OverrideStrategies.NO_NEW_OPTIONS,
         }
         key = (
-            bool(self.env_prefix),
             self.create_new_from_env_prefix,
             self.create_new_from_direct,
         )

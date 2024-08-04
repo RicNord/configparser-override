@@ -4,12 +4,10 @@ import pytest
 
 from configparser_override.exceptions import OverrideStrategyNotImplementedError
 from configparser_override.override_strategy import (
-    NoPrefixNewDirectStrategy,
-    NoPrefixNoNewStrategy,
-    PrefixNewDirectStrategy,
-    PrefixNewEnvNewDirectStrategy,
-    PrefixNewEnvStrategy,
-    PrefixNoNewStrategy,
+    NewOptionsFromDirectAndEnvStrategy,
+    NewOptionsFromDirectStrategy,
+    NewOptionsFromEnvStrategy,
+    NoNewOptionsStrategy,
 )
 from configparser_override.strategy_factory import StrategyFactory
 from tests._constants import TEST_ENV_PREFIX
@@ -19,46 +17,46 @@ def test_strategy_factory_no_prefix_no_new():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, "", False, False, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, NoPrefixNoNewStrategy)
+    assert isinstance(strategy, NoNewOptionsStrategy)
 
 
 def test_strategy_factory_no_prefix_new_direct():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, "", False, True, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, NoPrefixNewDirectStrategy)
+    assert isinstance(strategy, NewOptionsFromDirectStrategy)
 
 
 def test_strategy_factory_prefix_no_new():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, TEST_ENV_PREFIX, False, False, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, PrefixNoNewStrategy)
+    assert isinstance(strategy, NoNewOptionsStrategy)
 
 
 def test_strategy_factory_prefix_new_direct():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, TEST_ENV_PREFIX, False, True, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, PrefixNewDirectStrategy)
+    assert isinstance(strategy, NewOptionsFromDirectStrategy)
 
 
 def test_strategy_factory_prefix_new_env():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, TEST_ENV_PREFIX, True, False, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, PrefixNewEnvStrategy)
+    assert isinstance(strategy, NewOptionsFromEnvStrategy)
 
 
 def test_strategy_factory_prefix_new_env_new_direct():
     config = configparser.ConfigParser()
     factory = StrategyFactory(config, TEST_ENV_PREFIX, True, True, {})
     strategy = factory.get_strategy()
-    assert isinstance(strategy, PrefixNewEnvNewDirectStrategy)
+    assert isinstance(strategy, NewOptionsFromDirectAndEnvStrategy)
 
 
 def test_strategy_factory_raises_not_implemented_error():
     config = configparser.ConfigParser()
-    factory = StrategyFactory(config, "", True, True, {})
+    factory = StrategyFactory(config, "", True, "s", {})  # type: ignore
     with pytest.raises(OverrideStrategyNotImplementedError):
         factory.get_strategy()

@@ -20,7 +20,7 @@ class ConfigParserOverride:
     def __init__(
         self,
         env_prefix: str = "",
-        create_new_from_env_prefix: bool = False,
+        create_new_from_env_prefix: bool = True,
         create_new_from_direct: bool = True,
         config_parser: configparser.ConfigParser | None = None,
         case_sensitive_overrides: bool = False,
@@ -57,9 +57,6 @@ class ConfigParserOverride:
         self.case_sensitive_overrides = case_sensitive_overrides
         self.optionxform = optionxform
         self.overrides = overrides
-
-        if self.create_new_from_env_prefix:
-            assert self.env_prefix, "To set new configuration options from environment variables a prefix has to be used!"
 
         # Configure ConfigParser and align optionxform for consistency in later
         # inferance for overrides
