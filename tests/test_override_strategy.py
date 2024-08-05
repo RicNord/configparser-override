@@ -3,14 +3,14 @@ import platform
 
 import pytest
 
-from configparser_override.exceptions import SectionNotFound
-from configparser_override.override_strategy import (
+from configparser_override._override_strategy import (
     NewOptionsFromDirectAndEnvStrategy,
     NewOptionsFromDirectStrategy,
     NewOptionsFromEnvStrategy,
     NoNewOptionsStrategy,
     _lowercase_optionxform,
 )
+from configparser_override.exceptions import SectionNotFound
 from tests._constants import TEST_ENV_PREFIX
 
 

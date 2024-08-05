@@ -4,13 +4,13 @@ import configparser
 import logging
 from typing import TYPE_CHECKING, Iterable
 
+from configparser_override._strategy_factory import StrategyFactory
 from configparser_override.dataclass import ConfigConverter
-from configparser_override.strategy_factory import StrategyFactory
 
 if TYPE_CHECKING:
     from _typeshed import StrOrBytesPath
 
-    from configparser_override.override_strategy import Strategy
+    from configparser_override._override_strategy import Strategy
     from configparser_override.types import _dataclass, _optionxform_fn
 
 logger = logging.getLogger(__name__)

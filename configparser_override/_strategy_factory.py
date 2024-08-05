@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from configparser_override._override_strategy import OverrideStrategies, Strategy
 from configparser_override.exceptions import OverrideStrategyNotImplementedError
-from configparser_override.override_strategy import OverrideStrategies, Strategy
 
 if TYPE_CHECKING:
     import configparser

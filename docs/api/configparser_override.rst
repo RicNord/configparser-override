@@ -10,8 +10,6 @@ Submodules
    configparser_override.configparser_override
    configparser_override.dataclass
    configparser_override.exceptions
-   configparser_override.override_strategy
-   configparser_override.strategy_factory
    configparser_override.types
 
 Module contents

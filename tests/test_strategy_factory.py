@@ -2,14 +2,14 @@ import configparser
 
 import pytest
 
-from configparser_override.exceptions import OverrideStrategyNotImplementedError
-from configparser_override.override_strategy import (
+from configparser_override._override_strategy import (
     NewOptionsFromDirectAndEnvStrategy,
     NewOptionsFromDirectStrategy,
     NewOptionsFromEnvStrategy,
     NoNewOptionsStrategy,
 )
-from configparser_override.strategy_factory import StrategyFactory
+from configparser_override._strategy_factory import StrategyFactory
+from configparser_override.exceptions import OverrideStrategyNotImplementedError
 from tests._constants import TEST_ENV_PREFIX
 
 

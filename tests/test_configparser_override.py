@@ -470,3 +470,16 @@ def test_config_to_dataclass(config_file):
     assert dataclass_config.SECTION1.key1 == "value1"
     assert dataclass_config.SECTION1.key2 == "value2"
     assert dataclass_config.SECTION2.key3 == "value3"
+
+
+def test_direct_override_and_direct_ignore(config_file):
+    parser = ConfigParserOverride(
+        create_new_from_direct=False,
+        section1__key1="direct1",
+        sectionMiss="not applied",
+    )
+    config = parser.read(filenames=config_file)
+
+    assert config["SECTION1"]["key1"] == "direct1"
+    assert config["SECTION1"]["key2"] == "value2"
+    assert config["SECTION2"]["key3"] == "value3"
