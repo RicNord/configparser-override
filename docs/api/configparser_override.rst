@@ -8,7 +8,7 @@ Submodules
    :maxdepth: 2
 
    configparser_override.configparser_override
-   configparser_override.dataclass
+   configparser_override.convert
    configparser_override.exceptions
    configparser_override.types
 

@@ -5,7 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Iterable
 
 from configparser_override._strategy_factory import StrategyFactory
-from configparser_override.dataclass import ConfigConverter
+from configparser_override.convert import ConfigConverter
 
 if TYPE_CHECKING:
     from _typeshed import StrOrBytesPath

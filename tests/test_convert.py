@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 
 from configparser_override import ConfigParserOverride
-from configparser_override.dataclass import ConfigConverter
+from configparser_override.convert import ConfigConverter
 
 
 @pytest.fixture()
