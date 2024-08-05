@@ -1,15 +1,28 @@
 [project]
 name = "configparser-override"
-description = "Configparser with environment variable and direct override"
+description = "ConfigParser with environment variable and direct assignment overrides"
 authors = [{ name = "Richard Nordström" }]
 readme = "README.md"
 dynamic = ["version"]
 dependencies = []
-license = { file = "LICENSE" }
+keywords = [
+    "cfg",
+    "conf",
+    "configparser",
+    "configuration",
+    "ini",
+    "override",
+    "parsing",
+]
 classifiers = [
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
 ]
+
+[project.urls]
+Repository = "https://github.com/RicNord/configparser-override.git"
+Issues = "https://github.com/RicNord/configparser-override/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -20,7 +33,6 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
-    "twine",
 ]
 style = ["ruff"]
 docs = ["myst-parser", "sphinx", "sphinx-autobuild", "sphinx-rtd-theme"]
