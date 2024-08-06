@@ -1,15 +1,15 @@
 # ConfigParser Override
 
 [![Version](https://img.shields.io/pypi/v/configparser-override?color=blue)](https://pypi.org/project/configparser-override/)
-[![Build Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
+[![Build
+Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
 
-This library provides a utility class `ConfigParserOverride` that extends the
-functionality of
-[`configparser.ConfigParser`](https://docs.python.org/3/library/configparser.html)
-to allow overriding configuration values with environment variables and
-directly assigned key-value arguments.
+`ConfigParserOverride` enhances the [stdlib
+ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
+you to override options from a configuration file or add new options using
+environment variables and directly assigned key-value arguments.
 
-> **NOTE:** This library only depends on the Python standard library!
+> **NOTE:** This package only depends on the Python Standard Library!
 
 ## Features
 
@@ -17,6 +17,8 @@ directly assigned key-value arguments.
 - Override configuration values with environment variables.
 - Override configuration values with directly assigned arguments.
 - Support for optional environment variable prefix.
+- Convert configuration objects to a dataclass and cast the values to
+  predefined datatypes.
 
 ## Install
 
@@ -48,6 +50,7 @@ key4 = value4
 
 ```python
 import os
+
 from configparser_override import ConfigParserOverride
 
 # Optionally set environment variables for overriding
@@ -60,7 +63,7 @@ os.environ["MYAPP_SECTION2__KEY3"] = "overridden_value3"
 parser = ConfigParserOverride(
     env_prefix="MYAPP_",
     SECTION2__KEY4="direct_override_value4",
-    section2__key5="direct_override_value5",  # By default sections and keys are case insensitive
+    section2__key5="direct_override_value5",  # Sections & options are case insensitive by default
 )
 
 # Read configuration from a file
@@ -76,25 +79,78 @@ print(config["section2"]["key4"])  # Output: direct_override_value4
 print(config["section2"]["key5"])  # Output: direct_override_value5
 ```
 
-### Note
+### Convert to a Dataclass and validate data types
+
+The library features a `ConfigConverter` class, which enables the conversion of
+configuration data into a dataclass instance. This functionality is
+particularly useful for ensuring that the configuration adheres to the expected
+format, since it tries to cast the values in the config to the types in the
+dataclass. Hence, it also allows you to take advantage of various typing
+frameworks and tools, such as integrations with your text editor, providing
+enhanced validation and code assistance.
+
+#### Example
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+from configparser_override import ConfigParserOverride
+
+
+@dataclass
+class Section1:
+    key1: int
+    key2: list[str]
+    key3: Optional[str] = None
+
+
+@dataclass
+class ExampleConfig:
+    section1: Section1
+
+
+# Initialize the parser with overrides
+parser = ConfigParserOverride(
+    section1__key1="42", section1__key2="['item1', 'item2']"
+)
+
+# Read configuration from **optional** file
+parser.read(filenames=[])
+
+# Convert to dataclass
+config_as_dataclass = parser.to_dataclass(ExampleConfig)
+print(config_as_dataclass.section1.key1)  # Output: 42
+print(type(config_as_dataclass.section1.key1))  # Output: <class 'int'>
+print(config_as_dataclass.section1.key2)  # Output: ['item1', 'item2']
+print(type(config_as_dataclass.section1.key2))  # Output: <class 'list'>
+print(config_as_dataclass.section1.key3)  # Output: None
+```
+
+### Notes
+
+#### Configuration source precedence
 
 Configuration values can be overridden in three ways. This is the order of
 precedence:
 
-1. **Directly assigned arguments** during initialization of the class.
+1. **Directly assigned arguments** during initialization of the
+   `ConfigParserOverride` class.
 2. **Environment variables**.
 3. **Configuration files**.
 
+#### Environment variable format
+
+For example: to override the option `key1` in `section1` with a prefix
+`MYAPP_`, the environment variable would be `MYAPP_SECTION1__KEY1`.
+
 The format for environment variable names is as follows:
 
-- When **no prefix** is set: The format is `[OPTION]`.
-- When **a prefix** is set: The format is `[PREFIX][OPTION]`.
+- When **no prefix** is set: The DEFAULT section format is `[OPTION]`.
+- When **a prefix** is set: The DEFAULT format is `[PREFIX][OPTION]`.
 - Sections and options are separated by double underscores (`__`).
-  - The format is `[PREFIX][SECTION]__[OPTION]` or `[SECTION]__[OPTION]` if no prefix
-    is set.
-
-For example, to override the option `key1` in `section1` with a prefix
-`MYAPP_`, the environment variable would be `MYAPP_SECTION1__KEY1`.
+  - The format is `[PREFIX][SECTION]__[OPTION]` or `[SECTION]__[OPTION]`
+    depending on if a prefix is set.
 
 ## Platform Dependency
 
@@ -109,21 +165,23 @@ behavior.
 In order to avoid any unanticipated issues and make your code safe to run on
 any platform, follow these rules:
 
-- `Environment variables` should be `UPPERCASE`.
-  - `Environment variable prefix` should be `UPPERCASE`.
-- `Sections` in config.ini files should be `lowercase`.
-  - One exception is the `DEFAULT` section which by convention is `UPPERCASE`.
-- `Options` in config.ini files should be `lowercase`.
-- `Directly assigned arguments` should be `lowercase`.
+| Element                       | Recommended Case |
+|-------------------------------|------------------|
+| Environment variables         | UPPERCASE        |
+| Environment variable prefix   | UPPERCASE        |
+| `DEFAULT` section in config.ini (as per convention in the standard library `ConfigParser`) | UPPERCASE |
+| Sections in config.ini files  | lowercase        |
+| Options in config.ini files   | lowercase        |
+| Directly assigned arguments   | lowercase        |
 
 ### Default Case Sensitivity Handling
 
-By default, `ConfigParserOverride` stores everything as lowercase, with an
-exception of `Section` headers that are read from configuration files, where
-the existing casing is honored. However, if you want to override something
-with an environment variable or direct assignment, it will recognize the
-existing casing of the section and continue to use that even though you use
-uppercase or something else in the override.
+By default, `ConfigParserOverride` tries to stores everything as lowercase,
+with the exception of `Section` headers that are read from configuration files,
+where the existing casing in the file is honored. However, if you want to
+override such a section with an environment variable or direct assignment, it
+will recognize the existing casing of the section and continue to use that even
+though you use other casing in the override method.
 
 It is highly discouraged, but you can make `ConfigParserOverride` case-sensitive
 by initializing it with the argument `case_sensitive_overrides=True`.
