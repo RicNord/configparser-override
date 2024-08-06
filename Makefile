@@ -85,13 +85,3 @@ clean-pyc: # Remove Python file artifacts
 .PHONY: clean
 clean: clean-build clean-pyc clean-tox clean-coverage clean-pytest clean-docs ## Remove all file artifacts
 	@echo "+ $@"
-
-.PHONY: publish-test
-publish-test: build ## Publish pkg to PyPi test instance
-	@echo "+ $@"
-	twine upload -r testpypi dist/*
-
-.PHONY: publish
-publish: build ## Publish pkg to PyPi
-	@echo "+ $@"
-	twine upload dist/*
