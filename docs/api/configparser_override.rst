@@ -1,6 +1,11 @@
 configparser\_override package
 ==============================
 
+.. automodule:: configparser_override
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -11,11 +16,3 @@ Submodules
    configparser_override.convert
    configparser_override.exceptions
    configparser_override.types
-
-Module contents
----------------
-
-.. automodule:: configparser_override
-   :members:
-   :undoc-members:
-   :show-inheritance:

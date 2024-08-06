@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?=
+SPHINXOPTS    ?= --write-all --fresh-env
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
@@ -20,7 +20,16 @@ livehtml:
 
 .PHONY: apidocs
 apidocs:
-	sphinx-apidoc --maxdepth 2 --remove-old --separate --output-dir $(SOURCEDIR)/api $(PKG)
+	sphinx-apidoc --maxdepth 2 --remove-old --force --module-first --separate --output-dir $(SOURCEDIR)/api $(PKG)
+
+.PHONY: clean
+clean:
+	rm -rf ./_build
+	rm -rf ./api
+
+.PHONY: build
+build: apidocs html
+	@echo "$@"
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
