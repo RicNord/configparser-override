@@ -4,9 +4,9 @@
 [![Build
 Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
 
-`ConfigParserOverride` enhances the [stdlib
+`ConfigParserOverride` enhances the [StdLib
 ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
-you to override options from a configuration file or add new options using
+you to override options from a configuration file or add new options using;
 environment variables and directly assigned key-value arguments.
 
 > **NOTE:** This package only depends on the Python Standard Library!
@@ -14,9 +14,9 @@ environment variables and directly assigned key-value arguments.
 ## Features
 
 - Read configuration from one or more files.
-- Override configuration values with environment variables.
-- Override configuration values with directly assigned arguments.
-- Support for optional environment variable prefix.
+- Override configuration options with environment variables.
+- Override configuration options with directly assigned arguments.
+- Optional environment variable prefix support.
 - Convert configuration objects to a dataclass and cast the values to
   predefined datatypes.
 
@@ -62,8 +62,9 @@ os.environ["MYAPP_SECTION2__KEY3"] = "overridden_value3"
 # overrides from direct assignments.
 parser = ConfigParserOverride(
     env_prefix="MYAPP_",
+    # Sections & options are case insensitive by default
     SECTION2__KEY4="direct_override_value4",
-    section2__key5="direct_override_value5",  # Sections & options are case insensitive by default
+    section2__key5="direct_override_value5",
 )
 
 # Read configuration from a file
@@ -79,12 +80,12 @@ print(config["section2"]["key4"])  # Output: direct_override_value4
 print(config["section2"]["key5"])  # Output: direct_override_value5
 ```
 
-### Convert to a Dataclass and validate data types
+### Convert to a Dataclass and Validate Data Types
 
 The library features a `ConfigConverter` class, which enables the conversion of
 configuration data into a dataclass instance. This functionality is
 particularly useful for ensuring that the configuration adheres to the expected
-format, since it tries to cast the values in the config to the types in the
+format, since it tries to cast the option in the config to the types in the
 dataclass. Hence, it also allows you to take advantage of various typing
 frameworks and tools, such as integrations with your text editor, providing
 enhanced validation and code assistance.
@@ -131,7 +132,7 @@ print(config_as_dataclass.section1.key3)  # Output: None
 
 #### Configuration source precedence
 
-Configuration values can be overridden in three ways. This is the order of
+Configuration options can be overridden in three ways. This is the order of
 precedence:
 
 1. **Directly assigned arguments** during initialization of the
@@ -169,12 +170,12 @@ any platform, follow these rules:
 |-------------------------------|------------------|
 | Environment variables         | UPPERCASE        |
 | Environment variable prefix   | UPPERCASE        |
-| `DEFAULT` section in config.ini (as per convention in the standard library `ConfigParser`) | UPPERCASE |
+| DEFAULT section in config.ini (as per convention in the standard library ConfigParser) | UPPERCASE |
 | Sections in config.ini files  | lowercase        |
 | Options in config.ini files   | lowercase        |
 | Directly assigned arguments   | lowercase        |
 
-### Default Case Sensitivity Handling
+### Case Sensitivity Handling
 
 By default, `ConfigParserOverride` tries to stores everything as lowercase,
 with the exception of `Section` headers that are read from configuration files,
