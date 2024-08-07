@@ -113,6 +113,10 @@ def config_file_complex_types_nested(tmp_path):
 
     [section2]
     key3 = ["true",1,"yes"]
+
+    [section3]
+    key4 = {"string1","string2"}
+    key5 = [{"string1"},{"string2"}]
     """
     config_path = tmp_path / "config.ini"
     config_path.write_text(config_content)
@@ -142,10 +146,17 @@ class ComplexNestedSection2:
 
 
 @dataclass
+class ComplexNestedSection3:
+    key4: set[str]
+    key5: list[set[str]]
+
+
+@dataclass
 class ConfigFileComlexNestedTypes:
     DEFAULT: ComplexNestedDefaultSection
     section1: ComplexNestedSection1
     section2: ComplexNestedSection2
+    section3: ComplexNestedSection3
 
 
 def test_simple_config_to_dataclass(config_file_simple_types):
@@ -197,3 +208,5 @@ def test_complex_nested_config_to_dataclass(config_file_complex_types_nested):
         "key2": {"nestedkey2": "value2"},
     }
     assert dataclass_rep.section2.key3 == [True, True, True]
+    assert dataclass_rep.section3.key4 == {"string1", "string2"}
+    assert dataclass_rep.section3.key5 == [{"string1"}, {"string2"}]

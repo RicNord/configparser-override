@@ -9,6 +9,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Union,
     get_args,
     get_origin,
@@ -153,6 +154,8 @@ class ConfigConverter:
             return self._cast_list(value, type_hint)
         if _origin in [dict, Dict]:
             return self._cast_dict(value, type_hint)
+        if _origin in [set, Set]:
+            return self._cast_set(value, type_hint)
         if _origin in (Optional, Union, UnionType):
             return self._cast_union(value, type_hint)
         if type_hint is type(None):
@@ -199,6 +202,36 @@ class ConfigConverter:
                     continue
             raise ConversionError(
                 f"Not possible to cast {value} into a list of {_types}"
+            )
+        raise LiteralEvalMiscast(
+            f"{value} casted as {type(_evaluated_option)} expected {type_hint}"
+        )
+
+    def _cast_set(self, value: Any, type_hint: Any) -> set:
+        """
+        Cast a value to a set of a specified type.
+
+        :param value: The value to cast.
+        :type value: Any
+        :param type_hint: The type hint for the set elements.
+        :type type_hint: Any
+        :return: The value cast to a set of the specified type.
+        :rtype: set
+        :raises ConversionError: If the value cannot be cast to a set of hinted types.
+        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
+            expected type.
+        """
+        _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
+        if isinstance(_evaluated_option, set):
+            _types = get_args(type_hint)
+            for typ in _types:
+                try:
+                    return {self._cast_value(item, typ) for item in _evaluated_option}
+                except Exception as e:
+                    logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                    continue
+            raise ConversionError(
+                f"Not possible to cast {value} into a set of {_types}"
             )
         raise LiteralEvalMiscast(
             f"{value} casted as {type(_evaluated_option)} expected {type_hint}"
