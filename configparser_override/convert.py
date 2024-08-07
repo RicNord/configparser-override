@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Tuple,
     Union,
     get_args,
     get_origin,
@@ -156,6 +157,8 @@ class ConfigConverter:
             return self._cast_dict(value, type_hint)
         if _origin in [set, Set]:
             return self._cast_set(value, type_hint)
+        if _origin in [tuple, Tuple]:
+            return self._cast_tuple(value, type_hint)
         if _origin in (Optional, Union, UnionType):
             return self._cast_union(value, type_hint)
         if type_hint is type(None):
@@ -232,6 +235,38 @@ class ConfigConverter:
                     continue
             raise ConversionError(
                 f"Not possible to cast {value} into a set of {_types}"
+            )
+        raise LiteralEvalMiscast(
+            f"{value} casted as {type(_evaluated_option)} expected {type_hint}"
+        )
+
+    def _cast_tuple(self, value: Any, type_hint: Any) -> tuple:
+        """
+        Cast a value to a tuple of a specified type.
+
+        :param value: The value to cast.
+        :type value: Any
+        :param type_hint: The type hint for the tuple elements.
+        :type type_hint: Any
+        :return: The value cast to a tuple of the specified type.
+        :rtype: tuple
+        :raises ConversionError: If the value cannot be cast to a tuple of hinted types.
+        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
+            expected type.
+        """
+        _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
+        if isinstance(_evaluated_option, tuple):
+            _types = get_args(type_hint)
+            for typ in _types:
+                try:
+                    return tuple(
+                        self._cast_value(item, typ) for item in _evaluated_option
+                    )
+                except Exception as e:
+                    logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                    continue
+            raise ConversionError(
+                f"Not possible to cast {value} into a tuple of {_types}"
             )
         raise LiteralEvalMiscast(
             f"{value} casted as {type(_evaluated_option)} expected {type_hint}"
