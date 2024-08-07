@@ -144,7 +144,7 @@ class ConfigConverter:
             return self._dict_to_dataclass(value, type_hint)  # type: ignore[type-var]
         if type_hint is Any:
             return value
-        if type_hint in [int, float, str]:
+        if type_hint in [int, float, complex, str]:
             return type_hint(value)
         if type_hint is bytes:
             return str(value).encode()

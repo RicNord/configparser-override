@@ -117,7 +117,7 @@ def config_file_complex_types_nested(tmp_path):
     [section3]
     key4 = {"string1","string2"}
     key5 = [{"string1"},{"string2"}]
-    key6 = ({"string1"},{"string2"})
+    key6 = ({"123j"},{"4+2j"})
     """
     config_path = tmp_path / "config.ini"
     config_path.write_text(config_content)
@@ -150,7 +150,7 @@ class ComplexNestedSection2:
 class ComplexNestedSection3:
     key4: set[str]
     key5: list[set[str]]
-    key6: tuple[set[str]]
+    key6: tuple[set[complex]]
 
 
 @dataclass
@@ -212,4 +212,4 @@ def test_complex_nested_config_to_dataclass(config_file_complex_types_nested):
     assert dataclass_rep.section2.key3 == [True, True, True]
     assert dataclass_rep.section3.key4 == {"string1", "string2"}
     assert dataclass_rep.section3.key5 == [{"string1"}, {"string2"}]
-    assert dataclass_rep.section3.key6 == ({"string1"}, {"string2"})
+    assert dataclass_rep.section3.key6 == ({123j}, {4 + 2j})
