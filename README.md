@@ -92,16 +92,16 @@ precedence:
 
 #### Environment variable configuration
 
-Override configuration options using environment variables with the following
-format:
-
-- **No Prefix**:
-  - For `DEFAULT` section: `[OPTION]`
-  - For other sections: `[SECTION]__[OPTION]`
+To override configuration options, use environment variables with the following
+format. Separate sections and options using double underscores (`__`):
 
 - **With Prefix** (`MYAPP_` as an example):
   - For `DEFAULT` section: `[PREFIX][OPTION]`
   - For other sections: `[PREFIX][SECTION]__[OPTION]`
+
+- **No Prefix**:
+  - For `DEFAULT` section: `[OPTION]`
+  - For other sections: `[SECTION]__[OPTION]`
 
 **Example**:
 
