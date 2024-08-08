@@ -80,7 +80,35 @@ print(config["section2"]["key4"])  # Output: direct_override_value4
 print(config["section2"]["key5"])  # Output: direct_override_value5
 ```
 
-### Convert to a Dataclass and Validate Data Types
+#### Configuration source precedence
+
+Configuration options can be overridden in three ways. This is the order of
+precedence:
+
+1. **Directly assigned arguments** during initialization of the
+   `ConfigParserOverride` class.
+2. **Environment variables**.
+3. **Configuration files**.
+
+#### Environment variable configuration
+
+Override configuration options using environment variables with the following
+format:
+
+- **No Prefix**:
+  - For `DEFAULT` section: `[OPTION]`
+  - For other sections: `[SECTION]__[OPTION]`
+
+- **With Prefix** (`MYAPP_` as an example):
+  - For `DEFAULT` section: `[PREFIX][OPTION]`
+  - For other sections: `[PREFIX][SECTION]__[OPTION]`
+
+**Example**:
+
+- To override `key1` in `section1` with prefix `MYAPP_`, use
+  `MYAPP_SECTION1__KEY1`.
+
+## Convert to a Dataclass and Validate Data Types
 
 The library features a `ConfigConverter` class, which enables the conversion of
 configuration data into a dataclass instance. This functionality is
@@ -90,7 +118,7 @@ dataclass. Hence, it also allows you to take advantage of various typing
 frameworks and tools, such as integrations with your text editor, providing
 enhanced validation and code assistance.
 
-#### Example
+### Example
 
 ```python
 from dataclasses import dataclass
@@ -128,7 +156,7 @@ print(type(config_as_dataclass.section1.key2))  # Output: <class 'list'>
 print(config_as_dataclass.section1.key3)  # Output: None
 ```
 
-#### Data Types
+### Data Types
 
 Supported data types are:
 
@@ -152,31 +180,6 @@ Others:
 - Optional | Option does not need to exist in config
 - Union | Tries to cast until successful, in the order the types are specified
 - Any | no type cast
-
-### Notes
-
-#### Configuration source precedence
-
-Configuration options can be overridden in three ways. This is the order of
-precedence:
-
-1. **Directly assigned arguments** during initialization of the
-   `ConfigParserOverride` class.
-2. **Environment variables**.
-3. **Configuration files**.
-
-#### Environment variable format
-
-For example: to override the option `key1` in `section1` with a prefix
-`MYAPP_`, the environment variable would be `MYAPP_SECTION1__KEY1`.
-
-The format for environment variable names is as follows:
-
-- When **no prefix** is set: The DEFAULT section format is `[OPTION]`.
-- When **a prefix** is set: The DEFAULT format is `[PREFIX][OPTION]`.
-- Sections and options are separated by double underscores (`__`).
-  - The format is `[PREFIX][SECTION]__[OPTION]` or `[SECTION]__[OPTION]`
-    depending on if a prefix is set.
 
 ## Platform Dependency
 
