@@ -69,14 +69,12 @@ class ConfigConverter:
         """
         config_dict: dict[str, dict[str, str]] = {}
         for sect in self.config.sections():
-            # If missing add nested section
-            if sect not in config_dict:
-                config_dict[sect] = {}
+            # Add nested sections
+            config_dict[sect] = {}
             for opt in self.config.options(sect):
                 config_dict[sect][opt] = self.config.get(section=sect, option=opt)
-        # If missing add default nested section
-        if self.config.default_section not in config_dict:
-            config_dict[self.config.default_section] = {}
+        # Add default nested section
+        config_dict[self.config.default_section] = {}
         for opt in self.config.defaults():
             config_dict[self.config.default_section][opt] = self.config.get(
                 section=self.config.default_section, option=opt
@@ -125,7 +123,7 @@ class ConfigConverter:
                     type_hint=field_type,
                 )
             elif not _is_optional_type(field_type):
-                raise ValueError(f"Missing field: {field_name}")
+                raise AttributeError(f"Missing field in source config: {field_name}")
         return dataclass(**_dict_with_types)
 
     def _cast_value(self, value: Any, type_hint: Any) -> Any:
