@@ -4,8 +4,8 @@
 [![Build
 Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
 
-`ConfigParserOverride` enhances the [StdLib
-ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
+`ConfigParserOverride` enhances the
+[ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
 you to override options from a configuration file or add new options using;
 environment variables and directly assigned key-value arguments.
 
@@ -127,6 +127,31 @@ print(config_as_dataclass.section1.key2)  # Output: ['item1', 'item2']
 print(type(config_as_dataclass.section1.key2))  # Output: <class 'list'>
 print(config_as_dataclass.section1.key3)  # Output: None
 ```
+
+#### Data Types
+
+Supported data types are:
+
+- String
+- Integer
+- Bool
+- Float
+- Complex
+- Bytes
+
+Collections (nesting is supported):
+
+- List
+- Dict
+- Set
+- Tuple
+
+Others:
+
+- None
+- Optional | Option does not need to exist in config
+- Union | Tries to cast until successful, in the order the types are specified
+- Any | no type cast
 
 ### Notes
 
