@@ -55,6 +55,7 @@ jobs:
           - lint
           - format
           - docs
+          - bandit
           - pre-commit
         os:
           - ubuntu-latest

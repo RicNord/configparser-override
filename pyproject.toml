@@ -26,6 +26,7 @@ Issues = "https://github.com/RicNord/configparser-override/issues"
 
 [project.optional-dependencies]
 dev = [
+    "bandit[toml]",
     "build",
     "bump-my-version",
     "mypy",
@@ -149,3 +150,6 @@ filename = "configparser_override/__init__.py"
 
 [tool.mypy]
 files = ["configparser_override/**/*.py", "tests/**/*.py"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
