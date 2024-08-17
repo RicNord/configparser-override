@@ -31,3 +31,11 @@ class LiteralEvalMiscast(ConfigParserOverrideError):
     """
 
     pass
+
+
+class NoConfigFilesFoundError(ConfigParserOverrideError):
+    """
+    Exception raised when no configuration files can be found
+    """
+
+    pass
