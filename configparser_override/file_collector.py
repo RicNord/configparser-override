@@ -10,6 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 def _log_and_return_if_exists(file_path: Path) -> Optional[Path]:
+    """
+    Check if the given file path exists and log as found if so.
+
+    :param file_path: Path to the configuration file.
+    :type file_path: Path
+    :return: The file path if it exists, otherwise None.
+    :rtype: Optional[Path]
+    """
     if file_path.exists():
         logger.debug(f"Found config file: {file_path}")
         return file_path
@@ -17,6 +25,16 @@ def _log_and_return_if_exists(file_path: Path) -> Optional[Path]:
 
 
 def _unix_collect_home_config(subdir: str, file_name: str) -> Optional[Path]:
+    """
+    Collect Unix home directory configuration file.
+
+    :param subdir: Subdirectory under the home config path.
+    :type subdir: str
+    :param file_name: Name of the configuration file.
+    :type file_name: str
+    :return: Path to the home configuration file if it exists, otherwise None.
+    :rtype: Optional[Path]
+    """
     home = Path.home()
     xdg_config_home = Path(os.getenv("XDG_CONFIG_HOME", home / ".config"))
     home_config = xdg_config_home / subdir / file_name
@@ -26,6 +44,18 @@ def _unix_collect_home_config(subdir: str, file_name: str) -> Optional[Path]:
 def _unix_collect_system_config(
     subdir: str, file_name: str, bare_etc: bool = False
 ) -> List[Path]:
+    """
+    Collect Unix system configuration files.
+
+    :param subdir: Subdirectory under the system config path.
+    :type subdir: str
+    :param file_name: Name of the configuration file.
+    :type file_name: str
+    :param bare_etc: Look in bare `/etc` directory if True.
+    :type bare_etc: bool
+    :return: List of paths to system configuration files.
+    :rtype: List[Path]
+    """
     config_file_list = []
     if bare_etc:
         file_path = Path("/etc") / subdir / file_name
@@ -45,6 +75,16 @@ def _unix_collect_system_config(
 
 
 def _windows_collect_home_config(subdir: str, file_name: str) -> Optional[Path]:
+    """
+    Collect Windows home directory configuration file.
+
+    :param subdir: Subdirectory under the home config path.
+    :type subdir: str
+    :param file_name: Name of the configuration file.
+    :type file_name: str
+    :return: Path to the home configuration file if it exists, otherwise None.
+    :rtype: Optional[Path]
+    """
     appdata = os.getenv("APPDATA")
     if appdata:
         home_config = Path(appdata) / subdir / file_name
@@ -53,6 +93,16 @@ def _windows_collect_home_config(subdir: str, file_name: str) -> Optional[Path]:
 
 
 def _windows_collect_system_config(subdir: str, file_name: str) -> List[Path]:
+    """
+    Collect Windows system configuration files.
+
+    :param subdir: Subdirectory under the system config path.
+    :type subdir: str
+    :param file_name: Name of the configuration file.
+    :type file_name: str
+    :return: List of paths to system configuration files.
+    :rtype: List[Path]
+    """
     programdata = os.getenv("PROGRAMDATA")
     config_file_list = []
     if programdata:
@@ -70,7 +120,49 @@ def config_file_collector(
     allow_no_found_files: bool = True,
     bare_etc: bool = False,
 ) -> List[Path]:
+    """
+    Collect configuration files from conventional locations.
 
+    If multiple files are returned, they are in order of ascending priority
+    (most important file last).
+
+    :param file_name: Name of the configuration file.
+    :type file_name: str
+    :param app_name: Name of the app, used as a subdirectory.
+    :type app_name: str
+    :param merge_files: Whether to merge all found config files. eg system files found
+        in /etc and user specific files found in HOME directory
+    :type merge_files: bool
+    :param allow_no_found_files: Whether to allow no found files without raising an error.
+    :type allow_no_found_files: bool
+    :param bare_etc: Look in bare `/etc` directory if True (Unix only).
+    :type bare_etc: bool
+    :return: List of paths to configuration files.
+    :rtype: List[Path]
+    :raises NoConfigFilesFoundError: If no config files are found and `allow_no_found_files` is False.
+
+    .. code-block:: python
+
+        from pathlib import Path
+        from your_module import config_file_collector
+
+        # Collect configuration files for the my_app application with
+        # the name config.ini
+        config_files = config_file_collector(
+            file_name="config.ini",
+            app_name="my_app",
+            merge_files=True,
+            allow_no_found_files=True
+        )
+
+        # Output the found configuration files
+        for config_file in config_files:
+            print(f"Found config file: {config_file}")
+        # Example output:
+        #    Found config file: /etc/xdg/my_app/config.ini
+        #    Found config file: /home/user/.config/my_app/config.ini
+
+    """
     system = platform.system()
 
     if system == "Windows":
@@ -87,6 +179,5 @@ def config_file_collector(
         raise NoConfigFilesFoundError(
             f"No configuration files found for file_name={file_name}, app_name={app_name}"
         )
-    # Return single most prioritized file if no merge, else entire list of
-    # found files with highest prioritized file last
+
     return [config_files.pop()] if config_files and not merge_files else config_files
