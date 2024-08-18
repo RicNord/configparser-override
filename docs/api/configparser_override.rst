@@ -15,4 +15,5 @@ Submodules
    configparser_override.configparser_override
    configparser_override.convert
    configparser_override.exceptions
+   configparser_override.file_collector
    configparser_override.types

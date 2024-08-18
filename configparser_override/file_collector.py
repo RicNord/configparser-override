@@ -116,7 +116,7 @@ def _windows_collect_system_config(subdir: str, file_name: str) -> List[Path]:
 def config_file_collector(
     file_name: str,
     app_name: str = "",
-    merge_files: bool = True,
+    only_most_important_file: bool = False,
     allow_no_found_files: bool = True,
     bare_etc: bool = False,
 ) -> List[Path]:
@@ -130,9 +130,9 @@ def config_file_collector(
     :type file_name: str
     :param app_name: Name of the app, used as a subdirectory.
     :type app_name: str
-    :param merge_files: Whether to merge all found config files. eg system files found
-        in /etc and user specific files found in HOME directory
-    :type merge_files: bool
+    :param only_most_important_file: Only return the most important (prioritized) file,
+        eg. home directory config files is more important than system wide config file
+    :type only_most_important_file: bool
     :param allow_no_found_files: Whether to allow no found files without raising an error.
     :type allow_no_found_files: bool
     :param bare_etc: Look in bare `/etc` directory if True (Unix only).
@@ -151,8 +151,8 @@ def config_file_collector(
         config_files = config_file_collector(
             file_name="config.ini",
             app_name="my_app",
-            merge_files=True,
-            allow_no_found_files=True
+            only_most_important_file=False,
+            allow_no_found_files=True,
         )
 
         # Output the found configuration files
@@ -180,4 +180,8 @@ def config_file_collector(
             f"No configuration files found for file_name={file_name}, app_name={app_name}"
         )
 
-    return [config_files.pop()] if config_files and not merge_files else config_files
+    return (
+        [config_files.pop()]
+        if config_files and only_most_important_file
+        else config_files
+    )
