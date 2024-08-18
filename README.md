@@ -19,6 +19,7 @@ environment variables and directly assigned key-value arguments.
 - Optional environment variable prefix support.
 - Convert configuration objects to a dataclass and cast the values to
   predefined datatypes.
+- Find and collect configuration files in conventional locations
 
 ## Install
 
@@ -68,7 +69,8 @@ parser = ConfigParserOverride(
 )
 
 # Read configuration from a file
-config = parser.read(filenames="config.ini")
+parser.read(filenames="config.ini")
+config = parser.config
 
 # Access the configuration
 print(config.defaults()["default_key1"])  # Output: overridden_default_value1
@@ -107,6 +109,54 @@ format. Separate sections and options using double underscores (`__`):
 
 - To override `key1` in `section1` with prefix `MYAPP_`, use
   `MYAPP_SECTION1__KEY1`.
+
+## Find and collect configuration files
+
+The library also contains a helper function `config_file_collector` that will
+search for configuration files in conventional locations based on your OS.
+The collected files can then be used as input to `ConfigParserOverride.read()`
+
+### Searched paths
+
+#### Linux and MacOS
+
+Unix systems follows [XDG base directory
+specification](https://specifications.freedesktop.org/basedir-spec/latest/) and
+used environment variables:
+
+- **XDG_CONFIG_HOME** (User config)
+  - Default to **$HOME/.config**
+- **XDG_CONFIG_DIRS** (System wide config)
+  - List of directories separated by semicolon `:`
+  - Default to **/etc/xdg**
+
+#### Windows
+
+Windows paths are specific in environment variables:
+
+- **APPDATA** (User config)
+  - Usually: **C:\Users\USERNAME\AppData\Roaming**
+- **PROGRAMDATA** (System wide config)
+  - Usually: **C:\ProgramData**
+
+### Example
+
+```python
+from configparser_override import ConfigParserOverride, config_file_collector
+
+collected_files = config_file_collector(file_name="config.ini", app_name="myapp")
+
+print(collected_files)
+# For Linux and MacOS
+# Output: ["/etc/xdg/myapp/config.ini", "/home/USERNAME/.config/myapp/config.ini"]
+
+# For Windows
+# Output: ["C:/ProgramData/myapp/config.ini", "C:/Users/USERNAME/AppData/Roaming/myapp/config.ini"]
+
+parser = ConfigParserOverride()
+parser.read(filenames=collected_files)
+config = parser.config
+```
 
 ## Convert to a Dataclass and Validate Data Types
 
