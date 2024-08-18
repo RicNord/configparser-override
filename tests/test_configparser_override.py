@@ -1,7 +1,10 @@
 import configparser
 import platform
 from dataclasses import dataclass
+from pathlib import Path
+from unittest.mock import patch
 
+import configparser_override.file_collector
 from configparser_override import ConfigParserOverride, __version__
 from tests._constants import TEST_ENV_PREFIX
 
@@ -483,3 +486,22 @@ def test_direct_override_and_direct_ignore(config_file):
     assert config["SECTION1"]["key1"] == "direct1"
     assert config["SECTION1"]["key2"] == "value2"
     assert config["SECTION2"]["key3"] == "value3"
+
+
+def test_collect_and_parse(config_file):
+    with patch(
+        "configparser_override.file_collector.config_file_collector"
+    ) as mock_collector:
+        config_paths = [Path(config_file)]
+        mock_collector.return_value = config_paths
+
+        config_files = configparser_override.file_collector.config_file_collector(
+            "dummy_value"
+        )
+        parser = ConfigParserOverride()
+        parser.read(filenames=config_files)
+        config = parser.config
+
+        assert config["SECTION1"]["key1"] == "value1"
+        assert config["SECTION1"]["key2"] == "value2"
+        assert config["SECTION2"]["key3"] == "value3"
