@@ -89,7 +89,7 @@ class ConfigParserOverride:
         self,
         filenames: StrOrBytesPath | Iterable[StrOrBytesPath],
         encoding: str | None = None,
-    ) -> configparser.ConfigParser:
+    ) -> list[str]:
         """
         Read configuration from one or more files and override with environment
         variables if set.
@@ -104,25 +104,25 @@ class ConfigParserOverride:
             Iterable[:py:class:`_typeshed.StrOrBytesPath`]
         :param encoding: The encoding to use for reading the files, defaults to None.
         :type encoding: str, optional
-        :return: The :py:class:`configparser.ConfigParser` object with the loaded and
-            possibly overridden configuration.
-        :rtype: :py:class:`configparser.ConfigParser`
+        :return: List of successfully parsed files
+        :rtype: list[str]
 
         **Examples:**
 
         .. code-block:: python
 
             >>> parser_override = ConfigParserOverride(test_option='value')
-            >>> config = parser_override.read(['example.ini'])
+            >>> parser_override.read(['example.ini'])
+            >>> config = parser_override.config
             >>> config.get('DEFAULT', 'test_option')
             'value'
 
 
         """
-        self._config.read(filenames=filenames, encoding=encoding)
+        files_read = self._config.read(filenames=filenames, encoding=encoding)
         strategy = self._get_override_strategy()
         strategy.execute()
-        return self.config
+        return files_read
 
     @property
     def config(self) -> configparser.ConfigParser:
