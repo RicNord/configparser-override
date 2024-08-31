@@ -80,6 +80,20 @@ def test_unix_collect_system_multi_config(mock_path_exists, mock_os_getenv):
     ]
 
 
+@patch("configparser_override.file_collector.os.getenv")
+@patch("configparser_override.file_collector.Path.exists")
+def test_unix_collect_system_multi_config_not_exist(mock_path_exists, mock_os_getenv):
+    # First value is most important
+    mock_os_getenv.return_value = "/etc/xdg:/etc"
+
+    mock_path_exists.return_value = False
+    subdir = "testapp"
+    file_name = "config.ini"
+    result = _unix_collect_system_config(subdir, file_name)
+    # Reverse importance for configpraser override default
+    assert result == []
+
+
 @patch("configparser_override.file_collector.Path.exists")
 def test_unix_collect_system_bare_etc(mock_path_exists):
     mock_path_exists.return_value = True
@@ -121,6 +135,17 @@ def test_windows_collect_system_config(mock_path_exists, mock_os_getenv):
     file_name = "config.ini"
     result = _windows_collect_system_config(subdir, file_name)
     assert result == [Path("C:/ProgramData/testapp/config.ini")]
+
+
+@patch("configparser_override.file_collector.os.getenv")
+@patch("configparser_override.file_collector.Path.exists")
+def test_windows_collect_system_config_not_exist_path(mock_path_exists, mock_os_getenv):
+    mock_os_getenv.return_value = "C:/ProgramData"
+    mock_path_exists.return_value = False
+    subdir = "testapp"
+    file_name = "config.ini"
+    result = _windows_collect_system_config(subdir, file_name)
+    assert result == []
 
 
 @patch("configparser_override.file_collector.os.getenv")
