@@ -1,5 +1,6 @@
+import configparser
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import pytest
 
@@ -428,3 +429,68 @@ def test_tuple_member_literaleval_error():
 
     with pytest.raises(LiteralEvalMiscast):
         ConfigConverter(parser.config).config_to_dataclass(C)
+
+
+@pytest.fixture()
+def config_file_allow_empty(tmp_path):
+    config_content = """
+    [sectionv]
+    key1 = 123
+
+    [sectione]
+    key3
+    """
+    config_path = tmp_path / "config_allow_empty.ini"
+    config_path.write_text(config_content)
+    return str(config_path)
+
+
+def test_none_type(config_file_allow_empty):
+    @dataclass
+    class SectionV:
+        key1: int
+
+    @dataclass
+    class SectionE:
+        key3: None
+
+    @dataclass
+    class ConfigEmptyKey:
+        sectionv: SectionV
+        sectione: SectionE
+
+    parser = ConfigParserOverride(
+        config_parser=configparser.ConfigParser(allow_no_value=True)
+    )
+    parser.read(filenames=[config_file_allow_empty])
+
+    dataclass_rep = parser.to_dataclass(ConfigEmptyKey)
+    assert dataclass_rep.sectione.key3 is None
+    assert dataclass_rep.sectionv.key1 == 123
+
+
+@pytest.fixture()
+def config_file_any(tmp_path):
+    config_content = """
+    [section]
+    key1 = 123
+    """
+    config_path = tmp_path / "config_any.ini"
+    config_path.write_text(config_content)
+    return str(config_path)
+
+
+def test_any_type(config_file_any):
+    @dataclass
+    class Section:
+        key1: Any
+
+    @dataclass
+    class ConfigAny:
+        section: Section
+
+    parser = ConfigParserOverride(config_parser=configparser.ConfigParser())
+    parser.read(filenames=[config_file_any])
+
+    dataclass_rep = parser.to_dataclass(ConfigAny)
+    assert dataclass_rep.section.key1 == "123"

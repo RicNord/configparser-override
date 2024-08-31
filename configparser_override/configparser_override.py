@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import configparser
 import logging
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Type
 
 from configparser_override._strategy_factory import StrategyFactory
 from configparser_override.convert import ConfigConverter
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from _typeshed import StrOrBytesPath
 
     from configparser_override._override_strategy import Strategy
-    from configparser_override.types import _dataclass, _optionxform_fn
+    from configparser_override.types import Dataclass, _optionxform_fn
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class ConfigParserOverride:
         """
         return self._config
 
-    def to_dataclass(self, dataclass: _dataclass) -> _dataclass:
+    def to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
 

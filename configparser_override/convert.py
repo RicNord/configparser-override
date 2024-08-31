@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import ast
-import configparser
 import dataclasses
 import logging
 from types import UnionType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -11,14 +13,19 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     Union,
     get_args,
     get_origin,
     get_type_hints,
 )
 
+if TYPE_CHECKING:
+    import configparser
+
+    from configparser_override.types import Dataclass
+
 from configparser_override.exceptions import ConversionError, LiteralEvalMiscast
-from configparser_override.types import _dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +88,7 @@ class ConfigConverter:
             )
         return config_dict
 
-    def config_to_dataclass(self, dataclass: _dataclass) -> _dataclass:
+    def config_to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
 
@@ -96,7 +103,9 @@ class ConfigConverter:
             dataclass=dataclass,
         )
 
-    def _dict_to_dataclass(self, input_dict: dict, dataclass: _dataclass) -> _dataclass:
+    def _dict_to_dataclass(
+        self, input_dict: dict, dataclass: Type[Dataclass]
+    ) -> Dataclass:
         """
         Convert a dictionary to a dataclass instance.
 
@@ -112,8 +121,6 @@ class ConfigConverter:
         type_hints = get_type_hints(dataclass)
 
         _dict_with_types: dict[str, Any] = {}
-        if not dataclasses.is_dataclass(dataclass):
-            raise ValueError(f"object {dataclass} is not a Dataclass")
         for field in dataclasses.fields(dataclass):
             field_name = field.name
             field_type = type_hints[field_name]
@@ -139,7 +146,8 @@ class ConfigConverter:
         :raises ValueError: If the type hint is unsupported.
         """
         if dataclasses.is_dataclass(type_hint):
-            return self._dict_to_dataclass(value, type_hint)  # type: ignore[type-var]
+            _type_hint = type_hint if isinstance(type_hint, type) else type(type_hint)
+            return self._dict_to_dataclass(value, _type_hint)
         if type_hint is Any:
             return value
         if type_hint in [int, float, complex, str]:
