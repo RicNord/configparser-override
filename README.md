@@ -70,7 +70,9 @@ parser = ConfigParserOverride(
 
 # Read configuration from a file
 parser.read(filenames="config.ini")
-config = parser.config
+
+# Apply overrides
+parser.apply_overrides()
 
 # Access the configuration
 print(config.defaults()["default_key1"])  # Output: overridden_default_value1
@@ -155,6 +157,7 @@ print(collected_files)
 
 parser = ConfigParserOverride()
 parser.read(filenames=collected_files)
+parser.apply_overrides()
 config = parser.config
 ```
 
@@ -197,8 +200,12 @@ parser = ConfigParserOverride(
 # Read configuration from **optional** file
 parser.read(filenames=[])
 
+# Apply overrides
+parser.apply_overrides()
+
 # Convert to dataclass
 config_as_dataclass = parser.to_dataclass(ExampleConfig)
+
 print(config_as_dataclass.section1.key1)  # Output: 42
 print(type(config_as_dataclass.section1.key1))  # Output: <class 'int'>
 print(config_as_dataclass.section1.key2)  # Output: ['item1', 'item2']
