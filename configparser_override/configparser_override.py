@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import configparser
 import logging
-from typing import TYPE_CHECKING, Iterable, Type
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Type
 
 from configparser_override._strategy_factory import StrategyFactory
 from configparser_override.convert import ConfigConverter
@@ -49,6 +49,17 @@ class ConfigParserOverride:
         :type optionxform: _optionxform_fn | None, optional
         :param overrides: Keyword arguments to directly override configuration values.
         :type overrides: dict[str, str | None]
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride(env_prefix='MYAPP_', test_option='value')
+            >>> parser_override.read(['example.ini'])
+            >>> parser_override.apply_overrides()
+            >>> config = parser_override.config
+            >>> config.get('DEFAULT', 'test_option')
+            'value'
         """
 
         self.env_prefix = env_prefix
@@ -85,19 +96,121 @@ class ConfigParserOverride:
             self.optionxform,
         ).get_strategy()
 
+    def apply_overrides(self) -> None:
+        """
+        Apply overrides to the current configuration.
+
+        This method utilizes the override strategy based on initialization parameters
+        to apply the overrides to the current configuration.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride(test_option='value')
+            >>> parser_override.read(['example.ini'])
+            >>> parser_override.apply_overrides()
+            >>> config = parser_override.config
+            >>> config.get('DEFAULT', 'test_option')
+            'value'
+        """
+        strategy = self._get_override_strategy()
+        strategy.execute()
+
+    def read_dict(
+        self, dictionary: Mapping[str, Mapping[str, Any]], source: str = "<string>"
+    ) -> None:
+        """
+        Read configuration from a dictionary.
+
+        This method reads the configuration data from a dictionary.
+
+        :param dictionary: The dictionary containing configuration data.
+        :type dictionary: Mapping[str, Mapping[str, Any]]
+        :param source: The source name of the dictionary being read, defaults to "<string>".
+        :type source: str, optional
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride()
+            >>> config_dict = {'section1': {'key1': 'value1'}}
+            >>> parser_override.read_dict(config_dict)
+            >>> parser_override.apply_overrides()
+            >>> config = parser_override.config
+            >>> config.get('section1', 'key1')
+            'value1'
+        """
+        self._config.read_dict(dictionary, source=source)
+
+    def read_string(self, string: str, source: str = "<string>") -> None:
+        """
+        Read configuration from a string.
+
+        This method reads the configuration data from a string.
+
+        :param string: The string containing configuration data.
+        :type string: str
+        :param source: The source name of the string being read, defaults to "<string>".
+        :type source: str, optional
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> parser_override = ConfigParserOverride()
+            >>> config_string = \"\"\"
+            ... [section1]
+            ... key1 = value1
+            ... \"\"\"
+            >>> parser_override.read_string(config_string)
+            >>> parser_override.apply_overrides()
+            >>> config = parser_override.config
+            >>> config.get('section1', 'key1')
+            'value1'
+        """
+        self._config.read_string(string, source=source)
+
+    def read_file(self, f: Iterable[str], source: str | None = None) -> None:
+        """
+        Read configuration from a file-like object.
+
+        This method reads the configuration data from a file-like object.
+
+        :param f: An iterable of strings representing lines in a file-like object.
+        :type f: Iterable[str]
+        :param source: The source name of the file being read, defaults to None.
+        :type source: str | None, optional
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> from io import StringIO
+            >>> parser_override = ConfigParserOverride()
+            >>> file_content = StringIO(\"\"\"
+            ... [section1]
+            ... key1 = value1
+            ... \"\"\")
+            >>> parser_override.read_file(file_content)
+            >>> parser_override.apply_overrides()
+            >>> config = parser_override.config
+            >>> config.get('section1', 'key1')
+            'value1'
+        """
+        self._config.read_file(f, source=source)
+
     def read(
         self,
         filenames: StrOrBytesPath | Iterable[StrOrBytesPath],
         encoding: str | None = None,
     ) -> list[str]:
         """
-        Read configuration from one or more files and override with environment
-        variables if set.
+        Read configuration from one or more files.
 
         This method is a wrapper around :py:meth:`configparser.ConfigParser.read` that
-        reads the specified filenames in order. After reading the files, it overrides
-        configuration values with corresponding environment variables and direct
-        overrides passed during initialization.
+        reads the specified filenames in order.
 
         :param filenames: A single filename or an iterable of filenames to read.
         :type filenames: :py:class:`_typeshed.StrOrBytesPath` or
@@ -113,15 +226,12 @@ class ConfigParserOverride:
 
             >>> parser_override = ConfigParserOverride(test_option='value')
             >>> parser_override.read(['example.ini'])
+            >>> parser_override.apply_overrides()
             >>> config = parser_override.config
             >>> config.get('DEFAULT', 'test_option')
             'value'
-
-
         """
         files_read = self._config.read(filenames=filenames, encoding=encoding)
-        strategy = self._get_override_strategy()
-        strategy.execute()
         return files_read
 
     @property
@@ -144,6 +254,7 @@ class ConfigParserOverride:
 
             >>> config = ConfigParserOverride(test_option='value')
             >>> config.read(['example.ini'])
+            >>> config.apply_overrides()
             >>> config.get('DEFAULT', 'test_option')
             'value'
 
@@ -156,7 +267,6 @@ class ConfigParserOverride:
             >>> config.set('section', 'option', 'value')
             >>> config.get('section', 'option')
             'value'
-
         """
         return self._config
 
@@ -168,9 +278,9 @@ class ConfigParserOverride:
         and leverage various typing frameworks, eg. integrations with your text editor.
 
         :param dataclass: The dataclass type to convert the configuration data into.
-        :type dataclass: _dataclass
+        :type dataclass: Dataclass
         :return: An instance of the dataclass populated with the configuration data.
-        :rtype: _dataclass
+        :rtype: Dataclass
 
         **Examples:**
 
@@ -188,6 +298,7 @@ class ConfigParserOverride:
 
             >>> config_parser_override = ConfigParserOverride(section1__key="a string")
             >>> config_parser_override.read()
+            >>> config_parser_override.apply_overrides()
             >>> config_as_dataclass = config_parser_override.to_dataclass(ExampleConfig)
             >>> assert config_as_dataclass.section1.key == "a string" # True
         """

@@ -73,6 +73,22 @@ class ConfigConverter:
 
         :return: The configuration data as a dictionary.
         :rtype: dict[str, dict[str, str]]
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> config = configparser.ConfigParser()
+            >>> config.read_string(\"\"\"
+            ... [section1]
+            ... key1 = value1
+            ... [section2]
+            ... key2 = value2
+            ... \"\"\")
+            >>> converter = ConfigConverter(config)
+            >>> config_dict = converter.config_to_dict()
+            >>> config_dict['section1']['key1']
+            'value1'
         """
         config_dict: dict[str, dict[str, str]] = {}
         for sect in self.config.sections():
@@ -93,9 +109,32 @@ class ConfigConverter:
         Convert the configuration data to a dataclass instance.
 
         :param dataclass: The dataclass type to convert the configuration data into.
-        :type dataclass: _dataclass
+        :type dataclass: Dataclass
         :return: An instance of the dataclass populated with the configuration data.
-        :rtype: _dataclass
+        :rtype: Dataclass
+
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> from dataclasses import dataclass
+
+            >>> @dataclass
+            ... class Section1:
+            ...     key: str
+
+            >>> @dataclass
+            ... class ExampleConfig:
+            ...     section1: Section1
+
+            >>> config = configparser.ConfigParser()
+            >>> config.read_string(\"\"\"
+            ... [section1]
+            ... key = value
+            ... \"\"\")
+            >>> converter = ConfigConverter(config)
+            >>> config_as_dataclass = converter.config_to_dataclass(ExampleConfig)
+            >>> assert config_as_dataclass.section1.key == "value" # True
         """
         config_dict = self.config_to_dict()
         return self._dict_to_dataclass(
@@ -112,11 +151,10 @@ class ConfigConverter:
         :param input_dict: The input dictionary to convert.
         :type input_dict: dict
         :param dataclass: The dataclass type to convert the dictionary into.
-        :type dataclass: _dataclass
+        :type dataclass: Dataclass
         :return: An instance of the dataclass populated with the dictionary data.
-        :rtype: _dataclass
-        :raises ValueError: If the input object is not a dataclass or required
-            fields are missing.
+        :rtype: Dataclass
+        :raises AttributeError: If required fields are missing in the source config.
         """
         type_hints = get_type_hints(dataclass)
 
@@ -134,17 +172,6 @@ class ConfigConverter:
         return dataclass(**_dict_with_types)
 
     def _cast_value(self, value: Any, type_hint: Any) -> Any:
-        """
-        Trey to cast a value to a given type hint.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The type hint to cast the value to.
-        :type type_hint: Any
-        :return: The value cast to the specified type hint.
-        :rtype: Any
-        :raises ValueError: If the type hint is unsupported.
-        """
         if dataclasses.is_dataclass(type_hint):
             _type_hint = type_hint if isinstance(type_hint, type) else type(type_hint)
             return self._dict_to_dataclass(value, _type_hint)
@@ -172,34 +199,12 @@ class ConfigConverter:
         raise ValueError(f"Unsupported type: {type_hint}")
 
     def _cast_bool(self, value: Any) -> bool:
-        """
-        Cast a value to a boolean.
-
-        :param value: The value to cast.
-        :type value: Any
-        :return: The value cast to a boolean.
-        :rtype: bool
-        :raises ValueError: If the value cannot be cast to a boolean.
-        """
         if str(value).lower() in self.boolean_states:
             return self.boolean_states[str(value).lower()]
         else:
             raise ValueError(f"{value=} not in possible {self.boolean_states=}")
 
     def _cast_list(self, value: Any, type_hint: Any) -> list:
-        """
-        Cast a value to a list of a specified type.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The type hint for the list elements.
-        :type type_hint: Any
-        :return: The value cast to a list of the specified type.
-        :rtype: list
-        :raises ConversionError: If the value cannot be cast to a list of hinted types.
-        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
-            expected type.
-        """
         _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
         if isinstance(_evaluated_option, list):
             _types = get_args(type_hint)
@@ -207,7 +212,7 @@ class ConfigConverter:
                 try:
                     return [self._cast_value(item, typ) for item in _evaluated_option]
                 except Exception as e:
-                    logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                    logger.debug(f"Failed to cast {value=} into {typ=}, error: {e}")
                     continue
             raise ConversionError(
                 f"Not possible to cast {value} into a list of {_types}"
@@ -217,19 +222,6 @@ class ConfigConverter:
         )
 
     def _cast_set(self, value: Any, type_hint: Any) -> set:
-        """
-        Cast a value to a set of a specified type.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The type hint for the set elements.
-        :type type_hint: Any
-        :return: The value cast to a set of the specified type.
-        :rtype: set
-        :raises ConversionError: If the value cannot be cast to a set of hinted types.
-        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
-            expected type.
-        """
         _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
         if isinstance(_evaluated_option, set):
             _types = get_args(type_hint)
@@ -237,7 +229,7 @@ class ConfigConverter:
                 try:
                     return {self._cast_value(item, typ) for item in _evaluated_option}
                 except Exception as e:
-                    logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                    logger.debug(f"Failed to cast {value=} into {typ=}, error: {e}")
                     continue
             raise ConversionError(
                 f"Not possible to cast {value} into a set of {_types}"
@@ -247,19 +239,6 @@ class ConfigConverter:
         )
 
     def _cast_tuple(self, value: Any, type_hint: Any) -> tuple:
-        """
-        Cast a value to a tuple of a specified type.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The type hint for the tuple elements.
-        :type type_hint: Any
-        :return: The value cast to a tuple of the specified type.
-        :rtype: tuple
-        :raises ConversionError: If the value cannot be cast to a tuple of hinted types.
-        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
-            expected type.
-        """
         _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
         if isinstance(_evaluated_option, tuple):
             _types = get_args(type_hint)
@@ -269,7 +248,7 @@ class ConfigConverter:
                         self._cast_value(item, typ) for item in _evaluated_option
                     )
                 except Exception as e:
-                    logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                    logger.debug(f"Failed to cast {value=} into {typ=}, error: {e}")
                     continue
             raise ConversionError(
                 f"Not possible to cast {value} into a tuple of {_types}"
@@ -279,20 +258,6 @@ class ConfigConverter:
         )
 
     def _cast_dict(self, value: Any, type_hint: Any) -> dict:
-        """
-        Cast a value to a dictionary of specified types for keys and values.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The type hint for the dictionary keys and values.
-        :type type_hint: Any
-        :return: The value cast to a dictionary of the specified types.
-        :rtype: dict
-        :raises ConversionError: If the value cannot be cast to a dictionary of
-            hinted types
-        :raises LiteralEvalMiscast: If the value cannot be evaluated to the
-            expected type.
-        """
         _evaluated_option = ast.literal_eval(value) if isinstance(value, str) else value
         if isinstance(_evaluated_option, dict):
             k_typ, v_typ = get_args(type_hint)
@@ -303,7 +268,7 @@ class ConfigConverter:
                 }
             except Exception as e:
                 logger.debug(
-                    f"Faild to cast {value=} into {k_typ=}, {v_typ=}, error: {e}"
+                    f"Failed to cast {value=} into {k_typ=}, {v_typ=}, error: {e}"
                 )
                 raise ConversionError(
                     f"Not possible to cast {value} into a dict of keys of type {k_typ}, and values of type {v_typ}, Error: {e}"
@@ -313,22 +278,10 @@ class ConfigConverter:
         )
 
     def _cast_union(self, value: Any, type_hint: Any) -> Any:
-        """
-        Cast a value to one of the types in a union type hint.
-
-        :param value: The value to cast.
-        :type value: Any
-        :param type_hint: The union type hint.
-        :type type_hint: Any
-        :return: The value cast to one of the types in the union.
-        :rtype: Any
-        :raises ConversionError: If the value cannot be cast to any of the types in
-            the union.
-        """
         for typ in get_args(type_hint):
             try:
                 return self._cast_value(value, typ)
             except Exception as e:
-                logger.debug(f"Faild to cast {value=} into {typ=}, error: {e}")
+                logger.debug(f"Failed to cast {value=} into {typ=}, error: {e}")
                 continue
         raise ConversionError(f"Not possible to cast {value} into type {type_hint}")
