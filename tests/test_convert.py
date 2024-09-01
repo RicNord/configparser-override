@@ -164,6 +164,7 @@ class ConfigFileComlexNestedTypes:
 def test_simple_config_to_dataclass(config_file_simple_types):
     parser = ConfigParserOverride()
     parser.read(filenames=config_file_simple_types)
+    parser.apply_overrides()
 
     dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
         ConfigFileSimpleTypes
@@ -178,6 +179,7 @@ def test_simple_config_to_dataclass(config_file_simple_types):
 def test_complex_config_to_dataclass(config_file_complex_types):
     parser = ConfigParserOverride()
     parser.read(filenames=config_file_complex_types)
+    parser.apply_overrides()
 
     dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
         ConfigFileComlexTypes
@@ -195,6 +197,7 @@ def test_complex_config_to_dataclass(config_file_complex_types):
 def test_complex_nested_config_to_dataclass(config_file_complex_types_nested):
     parser = ConfigParserOverride()
     parser.read(filenames=config_file_complex_types_nested)
+    parser.apply_overrides()
 
     dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
         ConfigFileComlexNestedTypes
@@ -226,6 +229,7 @@ def test_config_to_dataclass_custom_bools():
 
     parser = ConfigParserOverride(sect1__true="cool", sect1__false="not cool")
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     dataclass_rep = ConfigConverter(
         parser.config, boolean_states=custom_booleans
@@ -249,6 +253,7 @@ def test_config_to_dataclass_bools_not_valid():
         sect1__true="notValidTrue", sect1__false="notValidFalse"
     )
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ValueError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -266,6 +271,7 @@ def test_missing_key_in_config():
 
     parser = ConfigParserOverride(sect1__key="ok")
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(AttributeError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -282,6 +288,7 @@ def test_unsupported_type():
 
     parser = ConfigParserOverride(sect1__key="ok")
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ValueError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -298,6 +305,7 @@ def test_list_member_conversion_error():
 
     parser = ConfigParserOverride(sect1__key='["ok"]')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ConversionError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -314,6 +322,7 @@ def test_set_member_conversion_error():
 
     parser = ConfigParserOverride(sect1__key='{"ok"}')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ConversionError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -330,6 +339,7 @@ def test_dict_member_conversion_error():
 
     parser = ConfigParserOverride(sect1__key='{"ok":"ok"}')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ConversionError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -346,6 +356,7 @@ def test_tuple_member_conversion_error():
 
     parser = ConfigParserOverride(sect1__key='("ok","ok")')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ConversionError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -362,6 +373,7 @@ def test_union_conversion_error():
 
     parser = ConfigParserOverride(sect1__key='["ok","ok"]')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(ConversionError):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -378,6 +390,7 @@ def test_list_member_literaleval_error():
 
     parser = ConfigParserOverride(sect1__key='{"ok"}')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -394,6 +407,7 @@ def test_set_member_literaleval_error():
 
     parser = ConfigParserOverride(sect1__key='["ok"]')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -410,6 +424,7 @@ def test_dict_member_literaleval_error():
 
     parser = ConfigParserOverride(sect1__key='["ok"]')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -426,6 +441,7 @@ def test_tuple_member_literaleval_error():
 
     parser = ConfigParserOverride(sect1__key='["ok"]')
     parser.read(filenames=[])
+    parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
         ConfigConverter(parser.config).config_to_dataclass(C)
@@ -463,6 +479,7 @@ def test_none_type(config_file_allow_empty):
         config_parser=configparser.ConfigParser(allow_no_value=True)
     )
     parser.read(filenames=[config_file_allow_empty])
+    parser.apply_overrides()
 
     dataclass_rep = parser.to_dataclass(ConfigEmptyKey)
     assert dataclass_rep.sectione.key3 is None
@@ -491,6 +508,7 @@ def test_any_type(config_file_any):
 
     parser = ConfigParserOverride(config_parser=configparser.ConfigParser())
     parser.read(filenames=[config_file_any])
+    parser.apply_overrides()
 
     dataclass_rep = parser.to_dataclass(ConfigAny)
     assert dataclass_rep.section.key1 == "123"

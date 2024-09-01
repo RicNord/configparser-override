@@ -18,6 +18,7 @@ def test_initialization():
 def test_read_config_file(config_file):
     parser = ConfigParserOverride()
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "value1"
@@ -31,6 +32,7 @@ def test_env_override_with_prefix(monkeypatch, config_file):
 
     parser = ConfigParserOverride(env_prefix=TEST_ENV_PREFIX)
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "override1"
@@ -43,6 +45,7 @@ def test_default_section_override_with_env(monkeypatch, config_file_with_default
 
     parser = ConfigParserOverride(env_prefix=TEST_ENV_PREFIX)
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key"] == "override_default"
@@ -59,6 +62,7 @@ def test_direct_override_takes_precedence_over_env(monkeypatch, config_file):
         env_prefix=TEST_ENV_PREFIX, SECTION1__key1="direct_override_value1"
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -71,6 +75,7 @@ def test_direct_override_from_file(config_file):
         env_prefix=TEST_ENV_PREFIX, SECTION1__key1="direct_override_value1"
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -85,6 +90,7 @@ def test_combined_env_and_direct_override(monkeypatch, config_file):
         env_prefix=TEST_ENV_PREFIX, SECTION1__key1="direct_override_value1"
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -97,6 +103,7 @@ def test_direct_override_in_default_section(config_file_with_default):
         env_prefix=TEST_ENV_PREFIX, default_key="direct_override_default_value"
     )
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key"] == "direct_override_default_value"
@@ -109,6 +116,7 @@ def test_config_parser_override_with_combined_overrides(monkeypatch):
 
     monkeypatch.setenv(f"{TEST_ENV_PREFIX}SECTION2__OPTION2", "env_value2")
     config_override.read([])
+    config_override.apply_overrides()
     config = config_override.config
 
     assert config.get("section1", "option1") == "override_value1"
@@ -124,6 +132,7 @@ def test_config_parser_override_with_combined_overrides_case_sensitive(monkeypat
 
     monkeypatch.setenv(f"{TEST_ENV_PREFIX}SECTION2__OPTION2", "env_value2")
     config_override.read([])
+    config_override.apply_overrides()
     config = config_override.config
 
     assert config.get("SECTION1", "option1") == "override_value1"
@@ -137,6 +146,7 @@ def test_case_insensitive_env_override(monkeypatch, config_file):
 
     parser = ConfigParserOverride(env_prefix=TEST_ENV_PREFIX)
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "env_override_value1"
@@ -151,6 +161,7 @@ def test_case_insensitive_only_option_env_override(monkeypatch, config_file):
 
     parser = ConfigParserOverride(env_prefix=TEST_ENV_PREFIX)
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "env_override_value1"
@@ -163,6 +174,7 @@ def test_case_insensitive_upper_direct_override(config_file):
         env_prefix=TEST_ENV_PREFIX, SECTION1__KEY1="direct_override_value1"
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -175,6 +187,7 @@ def test_case_insensitive_lower_direct_override(config_file):
         env_prefix=TEST_ENV_PREFIX, section1__KEY1="direct_override_value1"
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -189,6 +202,7 @@ def test_case_insensitive_lower_direct_multi_override(config_file):
         section2__KEY3="direct_override_value3",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -204,6 +218,7 @@ def test_case_insensitive_lower_direct_not_new(config_file):
         section3__KEY4="direct_override_value4",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "value1"  # Not overridden
@@ -222,6 +237,7 @@ def test_combined_case_insensitive_overrides(monkeypatch, config_file):
         create_new_from_env_prefix=True,
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -240,6 +256,7 @@ def test_combined_case_sensitive_overrides(monkeypatch, config_file):
         case_sensitive_overrides=True,
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     p = platform.system()
@@ -266,6 +283,7 @@ def test_combined_case_sensitive_overrides_no_new(monkeypatch, config_file):
         case_sensitive_overrides=True,
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     p = platform.system()
@@ -290,6 +308,7 @@ def test_combined_overrides_with_default_section(monkeypatch, config_file_with_d
         env_prefix=TEST_ENV_PREFIX, default_key="direct_override_default_value"
     )
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key"] == "direct_override_default_value"
@@ -321,6 +340,7 @@ def test_custom_config_parser_with_combined_overrides(monkeypatch):
 
     monkeypatch.setenv(f"{TEST_ENV_PREFIX}CUSTOM__NEWKEY", "env_value")
     config_override.read([])
+    config_override.apply_overrides()
     config = config_override.config
 
     assert config.get("CUSTOM", "key") == "override_value"
@@ -338,6 +358,7 @@ def test_custom_config_parser_with_file(config_file):
         SECTION1__key1="override_value",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["CUSTOM"]["key"] == "custom_value"
@@ -353,6 +374,7 @@ def test_config_parser_with_default_section_new_direct(config_file_with_default)
         new_default_key="direct_override_default_value",
     )
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["new_default_key"] == "direct_override_default_value"
@@ -370,6 +392,7 @@ def test_config_parser_with_default_section_env_override(
         create_new_from_env_prefix=False,
     )
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key"] == "env_override_default_value"
@@ -386,6 +409,7 @@ def test_custom_config_parser_with_default_section(config_file_with_default):
         default_key="direct_override_default_value",
     )
     parser.read(filenames=config_file_with_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key"] == "direct_override_default_value"
@@ -401,6 +425,7 @@ def test_custom_config_parser_with_custom_default_section(
         config_parser=custom_parser,
     )
     parser.read(filenames=config_file_with_custom_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config.defaults()["default_key1"] == "default_value1"
@@ -419,6 +444,7 @@ def test_custom_config_parser_with_custom_default_section_override(
         default_key2="direct_override_default_value2",
     )
     parser.read(filenames=config_file_with_custom_default)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["COMMON"]["default_key2"] == "direct_override_default_value2"
@@ -437,6 +463,7 @@ def test_custom_optionxform_insensetive(monkeypatch, config_file):
         section1__key1="direct_override_value1",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -456,6 +483,7 @@ def test_custom_optionxform_sensetive(monkeypatch, config_file):
         SECTION1__KEY1="direct_override_value1",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["KEY1"] == "direct_override_value1"
@@ -476,6 +504,7 @@ def test_combined_case_sensitive_overrides_plus_prefix(monkeypatch, config_file)
         case_sensitive_overrides=True,
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct_override_value1"
@@ -500,6 +529,7 @@ def test_config_to_dataclass(config_file):
 
     parser = ConfigParserOverride()
     parser.read(filenames=config_file)
+    parser.apply_overrides()
 
     dataclass_config = parser.to_dataclass(ConfigFile)
     assert dataclass_config.SECTION1.key1 == "value1"
@@ -514,6 +544,7 @@ def test_direct_override_and_direct_ignore(config_file):
         sectionMiss="not applied",
     )
     parser.read(filenames=config_file)
+    parser.apply_overrides()
     config = parser.config
 
     assert config["SECTION1"]["key1"] == "direct1"
@@ -533,6 +564,7 @@ def test_collect_and_parse(config_file):
         )
         parser = ConfigParserOverride()
         parser.read(filenames=config_files)
+        parser.apply_overrides()
         config = parser.config
 
         assert config["SECTION1"]["key1"] == "value1"
