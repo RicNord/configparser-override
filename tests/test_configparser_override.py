@@ -1,6 +1,7 @@
 import configparser
 import platform
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -589,3 +590,117 @@ def test_files_parsed(
         config_file_with_default,
         config_file_with_custom_default,
     ]
+
+
+def test_read_dict():
+    parser = ConfigParserOverride()
+    config_dict = {
+        "section1": {"key1": "value1", "key2": "value2"},
+        "section2": {"key3": "value3"},
+    }
+    parser.read_dict(config_dict)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "value3"
+
+
+def test_read_string():
+    parser = ConfigParserOverride()
+    config_string = """
+    [section1]
+    key1 = value1
+    key2 = value2
+
+    [section2]
+    key3 = value3
+    """
+    parser.read_string(config_string)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "value3"
+
+
+def test_read_file():
+    parser = ConfigParserOverride()
+    config_file_content = """
+    [section1]
+    key1 = value1
+    key2 = value2
+
+    [section2]
+    key3 = value3
+    """
+    config_file = StringIO(config_file_content)
+    parser.read_file(config_file)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "value3"
+
+
+def test_read_dict_with_overrides():
+    parser = ConfigParserOverride(
+        section1__key1="override_value1", section2__key3="override_value3"
+    )
+    config_dict = {
+        "section1": {"key1": "value1", "key2": "value2"},
+        "section2": {"key3": "value3"},
+    }
+    parser.read_dict(config_dict)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "override_value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "override_value3"
+
+
+def test_read_string_with_overrides():
+    parser = ConfigParserOverride(
+        section1__key1="override_value1", section2__key3="override_value3"
+    )
+    config_string = """
+    [section1]
+    key1 = value1
+    key2 = value2
+
+    [section2]
+    key3 = value3
+    """
+    parser.read_string(config_string)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "override_value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "override_value3"
+
+
+def test_read_file_with_overrides():
+    parser = ConfigParserOverride(
+        section1__key1="override_value1", section2__key3="override_value3"
+    )
+    config_file_content = """
+    [section1]
+    key1 = value1
+    key2 = value2
+
+    [section2]
+    key3 = value3
+    """
+    config_file = StringIO(config_file_content)
+    parser.read_file(config_file)
+    parser.apply_overrides()
+
+    config = parser.config
+    assert config["section1"]["key1"] == "override_value1"
+    assert config["section1"]["key2"] == "value2"
+    assert config["section2"]["key3"] == "override_value3"
