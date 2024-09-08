@@ -50,7 +50,7 @@ include = ["configparser_override*"]
 exclude = ["data*", "tests*"]
 
 [tool.setuptools.package-data]
-configparser_override = ["*.json", "*.yaml", "*.yml", "*.txt"]
+configparser_override = ["*.json", "*.yaml", "*.yml", "*.txt", "py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
