@@ -167,9 +167,7 @@ def test_simple_config_to_dataclass(config_file_simple_types):
     parser.read(filenames=config_file_simple_types)
     parser.apply_overrides()
 
-    dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
-        ConfigFileSimpleTypes
-    )
+    dataclass_rep = ConfigConverter(parser.config).to_dataclass(ConfigFileSimpleTypes)
     assert dataclass_rep.DEFAULT.allkey == "string"
     assert dataclass_rep.section1.allkey == "string"
     assert dataclass_rep.section1.key1 == 123
@@ -182,9 +180,7 @@ def test_complex_config_to_dataclass(config_file_complex_types):
     parser.read(filenames=config_file_complex_types)
     parser.apply_overrides()
 
-    dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
-        ConfigFileComlexTypes
-    )
+    dataclass_rep = ConfigConverter(parser.config).to_dataclass(ConfigFileComlexTypes)
     assert dataclass_rep.DEFAULT.allkey == b"byte"
     assert dataclass_rep.section1.allkey == b"byte"
     assert dataclass_rep.section1.key1 == [1, 2, 3, 4, 5, 6]
@@ -200,7 +196,7 @@ def test_complex_nested_config_to_dataclass(config_file_complex_types_nested):
     parser.read(filenames=config_file_complex_types_nested)
     parser.apply_overrides()
 
-    dataclass_rep = ConfigConverter(parser.config).config_to_dataclass(
+    dataclass_rep = ConfigConverter(parser.config).to_dataclass(
         ConfigFileComlexNestedTypes
     )
     assert dataclass_rep.DEFAULT.allkey == b"byte"
@@ -234,7 +230,7 @@ def test_config_to_dataclass_custom_bools():
 
     dataclass_rep = ConfigConverter(
         parser.config, boolean_states=custom_booleans
-    ).config_to_dataclass(CustomBools)
+    ).to_dataclass(CustomBools)
 
     assert dataclass_rep.sect1.false is False
     assert dataclass_rep.sect1.true is True
@@ -257,7 +253,7 @@ def test_config_to_dataclass_bools_not_valid():
     parser.apply_overrides()
 
     with pytest.raises(ValueError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_missing_key_in_config():
@@ -275,7 +271,7 @@ def test_missing_key_in_config():
     parser.apply_overrides()
 
     with pytest.raises(AttributeError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_unsupported_type():
@@ -292,7 +288,7 @@ def test_unsupported_type():
     parser.apply_overrides()
 
     with pytest.raises(ValueError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_list_member_conversion_error():
@@ -309,7 +305,7 @@ def test_list_member_conversion_error():
     parser.apply_overrides()
 
     with pytest.raises(ConversionError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_set_member_conversion_error():
@@ -326,7 +322,7 @@ def test_set_member_conversion_error():
     parser.apply_overrides()
 
     with pytest.raises(ConversionError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_dict_member_conversion_error():
@@ -343,7 +339,7 @@ def test_dict_member_conversion_error():
     parser.apply_overrides()
 
     with pytest.raises(ConversionError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_tuple_member_conversion_error():
@@ -360,7 +356,7 @@ def test_tuple_member_conversion_error():
     parser.apply_overrides()
 
     with pytest.raises(ConversionError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_union_conversion_error():
@@ -377,7 +373,7 @@ def test_union_conversion_error():
     parser.apply_overrides()
 
     with pytest.raises(ConversionError):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_list_member_literaleval_error():
@@ -394,7 +390,7 @@ def test_list_member_literaleval_error():
     parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_set_member_literaleval_error():
@@ -411,7 +407,7 @@ def test_set_member_literaleval_error():
     parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_dict_member_literaleval_error():
@@ -428,7 +424,7 @@ def test_dict_member_literaleval_error():
     parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 def test_tuple_member_literaleval_error():
@@ -445,7 +441,7 @@ def test_tuple_member_literaleval_error():
     parser.apply_overrides()
 
     with pytest.raises(LiteralEvalMiscast):
-        ConfigConverter(parser.config).config_to_dataclass(C)
+        ConfigConverter(parser.config).to_dataclass(C)
 
 
 @pytest.fixture()

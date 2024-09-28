@@ -68,7 +68,7 @@ class ConfigConverter:
         else:
             self.boolean_states = self.config.BOOLEAN_STATES
 
-    def config_to_dict(self) -> dict[str, dict[str, str]]:
+    def to_dict(self) -> dict[str, dict[str, str]]:
         """
         Convert the configuration data to a nested dictionary.
 
@@ -87,7 +87,7 @@ class ConfigConverter:
             ... key2 = value2
             ... \"\"\")
             >>> converter = ConfigConverter(config)
-            >>> config_dict = converter.config_to_dict()
+            >>> config_dict = converter.to_dict()
             >>> config_dict['section1']['key1']
             'value1'
         """
@@ -105,7 +105,7 @@ class ConfigConverter:
             )
         return config_dict
 
-    def config_to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
+    def to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
 
@@ -134,10 +134,10 @@ class ConfigConverter:
             ... key = value
             ... \"\"\")
             >>> converter = ConfigConverter(config)
-            >>> config_as_dataclass = converter.config_to_dataclass(ExampleConfig)
+            >>> config_as_dataclass = converter.to_dataclass(ExampleConfig)
             >>> assert config_as_dataclass.section1.key == "value" # True
         """
-        config_dict = self.config_to_dict()
+        config_dict = self.to_dict()
         return self._dict_to_dataclass(
             input_dict=config_dict,
             dataclass=dataclass,

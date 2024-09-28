@@ -303,4 +303,4 @@ class ConfigParserOverride:
             >>> assert config_as_dataclass.section1.key == "a string" # True
         """
 
-        return ConfigConverter(self._config).config_to_dataclass(dataclass)
+        return ConfigConverter(self._config).to_dataclass(dataclass)
