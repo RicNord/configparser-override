@@ -4,7 +4,7 @@
 [![Build
 Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
 
-`ConfigParserOverride` enhances the pyhton standard library built-in
+`ConfigParserOverride` enhances the python standard library built-in
 [ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
 you to override or add new options using; environment variables and directly
 assigned key-value arguments.
