@@ -4,22 +4,21 @@
 [![Build
 Status](https://github.com/RicNord/configparser-override/actions/workflows/ci.yaml/badge.svg)](https://github.com/RicNord/configparser-override/actions)
 
-`ConfigParserOverride` enhances the
+`ConfigParserOverride` enhances the pyhton standard library built-in
 [ConfigParser](https://docs.python.org/3/library/configparser.html) by allowing
-you to override options from a configuration file or add new options using;
-environment variables and directly assigned key-value arguments.
+you to override or add new options using; environment variables and directly
+assigned key-value arguments.
 
 > **NOTE:** This package only depends on the Python Standard Library!
 
 ## Features
 
-- Read configuration from one or more files.
 - Override configuration options with environment variables.
 - Override configuration options with directly assigned arguments.
-- Optional environment variable prefix support.
-- Convert configuration objects to a dataclass and cast the values to
-  predefined datatypes.
-- Find and collect configuration files in conventional locations
+- Convert configuration object to a dataclass and cast the values to predefined
+  datatypes.
+- Find and collect configuration files in conventional locations based on your
+  operating system.
 
 ## Install
 
