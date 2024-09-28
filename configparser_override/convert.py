@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import dataclasses
 import logging
+from pathlib import Path
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
@@ -177,7 +178,7 @@ class ConfigConverter:
             return self._dict_to_dataclass(value, _type_hint)
         if type_hint is Any:
             return value
-        if type_hint in [int, float, complex, str]:
+        if type_hint in [int, float, complex, str, Path]:
             return type_hint(value)
         if type_hint is bytes:
             return str(value).encode()

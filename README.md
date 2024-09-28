@@ -223,6 +223,7 @@ Supported data types are:
 - Float
 - Complex
 - Bytes
+- pathlib.Path
 
 Collections (nesting is supported):
 

@@ -1,5 +1,6 @@
 import configparser
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pytest
@@ -512,3 +513,37 @@ def test_any_type(config_file_any):
 
     dataclass_rep = parser.to_dataclass(ConfigAny)
     assert dataclass_rep.section.key1 == "123"
+
+
+@pytest.fixture()
+def config_file_path(tmp_path):
+    config_content = """
+    [section]
+    key1 = relative/path
+    key2 = /absolut/path
+    """
+    config_path = tmp_path / "config_any.ini"
+    config_path.write_text(config_content)
+    return str(config_path)
+
+
+def test_path_type(config_file_path):
+    @dataclass
+    class Section:
+        key1: Path
+        key2: Path
+
+    @dataclass
+    class ConfigAny:
+        section: Section
+
+    parser = ConfigParserOverride(config_parser=configparser.ConfigParser())
+    parser.read(filenames=[config_file_path])
+    parser.apply_overrides()
+
+    dataclass_rep = parser.to_dataclass(ConfigAny)
+    assert dataclass_rep.section.key1 == Path("relative/path")
+    assert dataclass_rep.section.key2 == Path("/absolut/path")
+    assert dataclass_rep.section.key1.resolve().is_relative_to(Path.cwd())
+    assert dataclass_rep.section.key2.is_absolute()
+    assert not dataclass_rep.section.key1.is_absolute()
