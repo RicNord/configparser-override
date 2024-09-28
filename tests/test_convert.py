@@ -1,4 +1,5 @@
 import configparser
+import platform
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -516,7 +517,8 @@ def config_file_path(tmp_path):
     config_content = """
     [section]
     key1 = relative/path
-    key2 = /absolut/path
+    key2 = /absolut/unix/path
+    key3 = c:/absolut/windows/path
     """
     config_path = tmp_path / "config_any.ini"
     config_path.write_text(config_content)
@@ -528,6 +530,7 @@ def test_path_type(config_file_path):
     class Section:
         key1: Path
         key2: Path
+        key3: Path
 
     @dataclass
     class ConfigAny:
@@ -539,7 +542,16 @@ def test_path_type(config_file_path):
 
     dataclass_rep = parser.to_dataclass(ConfigAny)
     assert dataclass_rep.section.key1 == Path("relative/path")
-    assert dataclass_rep.section.key2 == Path("/absolut/path")
+    assert dataclass_rep.section.key2 == Path("/absolut/unix/path")
+    assert dataclass_rep.section.key3 == Path("c:/absolut/windows/path")
     assert dataclass_rep.section.key1.resolve().is_relative_to(Path.cwd())
-    assert dataclass_rep.section.key2.is_absolute()
     assert not dataclass_rep.section.key1.is_absolute()
+
+    system = platform.system()
+
+    if system == "Windows":
+        assert not dataclass_rep.section.key2.is_absolute()
+        assert dataclass_rep.section.key3.is_absolute()
+    else:  # UNIX
+        assert dataclass_rep.section.key2.is_absolute()
+        assert not dataclass_rep.section.key3.is_absolute()
