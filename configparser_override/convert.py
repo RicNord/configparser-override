@@ -26,7 +26,12 @@ if TYPE_CHECKING:
 
     from configparser_override.types import Dataclass
 
-from configparser_override.exceptions import ConversionError, LiteralEvalMiscast
+from configparser_override.exceptions import (
+    ConversionError,
+    ConversionIgnoreError,
+    InvalidParametersError,
+    LiteralEvalMiscast,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +39,42 @@ logger = logging.getLogger(__name__)
 def _is_optional_type(type_hint: Any) -> bool:
     """
     Check if a given type hint is an optional type.
-
-    :param type_hint: The type hint to check.
-    :type type_hint: Any
-    :return: True if the type hint is optional, False otherwise.
-    :rtype: bool
     """
     return get_origin(type_hint) in [Union, UnionType] and type(None) in get_args(
         type_hint
     )
+
+
+def _is_optional_dataclass(type_hint: Any) -> bool:
+    """
+    Check if a given type hint is an optional dataclass.
+    """
+    if get_origin(type_hint) not in [Union, UnionType]:
+        return False
+
+    for arg in get_args(type_hint):
+        if arg is type(None) or dataclasses.is_dataclass(arg):
+            return False
+
+    return True
+
+
+def _field_has_default_value(field: dataclasses.Field) -> bool:
+    """
+    Check if a given dataclass field has a default value.
+    """
+    return (
+        field.default_factory != dataclasses.MISSING
+        or field.default != dataclasses.MISSING
+    )
+
+
+def _can_ignore_section(field: dataclasses.Field) -> bool:
+    return _is_optional_dataclass(field.type) or _field_has_default_value(field)
+
+
+def _can_ignore_conversion(field: dataclasses.Field) -> bool:
+    return _is_optional_type(field.type) or _field_has_default_value(field)
 
 
 class ConfigConverter:
@@ -61,8 +93,18 @@ class ConfigConverter:
         self,
         config: configparser.ConfigParser,
         boolean_states: Optional[Mapping[str, bool]] = None,
+        include_sections: Optional[List[str]] = None,
+        exclude_sections: Optional[List[str]] = None,
     ) -> None:
         self.config = config
+
+        if include_sections is not None and exclude_sections is not None:
+            raise InvalidParametersError(
+                "Not allows to specify both include_sections and exclude_sections parameters at the same time"
+            )
+        self.include_sections = include_sections
+        self.exclude_sections = exclude_sections
+
         if boolean_states:
             self.boolean_states = boolean_states
         else:
@@ -143,39 +185,61 @@ class ConfigConverter:
             dataclass=dataclass,
         )
 
-    def _dict_to_dataclass(
-        self, input_dict: dict, dataclass: Type[Dataclass]
-    ) -> Dataclass:
-        """
-        Convert a dictionary to a dataclass instance.
+    def _parse_section(self, section: str) -> bool:
+        if self.include_sections is not None and section in self.include_sections:
+            return True
 
-        :param input_dict: The input dictionary to convert.
-        :type input_dict: dict
-        :param dataclass: The dataclass type to convert the dictionary into.
-        :type dataclass: Dataclass
-        :return: An instance of the dataclass populated with the dictionary data.
-        :rtype: Dataclass
-        :raises AttributeError: If required fields are missing in the source config.
-        """
+        if self.exclude_sections is not None and section in self.exclude_sections:  # noqa: SIM103
+            return False
+
+        # Default case
+        return True
+
+    def _dict_to_dataclass(
+        self,
+        input_dict: dict,
+        dataclass: Type[Dataclass],
+        nested_level: int = 0,
+    ) -> Dataclass:
         type_hints = get_type_hints(dataclass)
 
         _dict_with_types: dict[str, Any] = {}
         for field in dataclasses.fields(dataclass):
             field_name = field.name
             field_type = type_hints[field_name]
+            logger.debug(f"Initiate conversion of {field_name=} and {field_type=}")
+
+            # Skip convertion of specified sections
+            if nested_level == 0 and not self._parse_section(field_name):
+                if _can_ignore_section(field):
+                    logger.debug(f"Ignore conversion of section {field_name}")
+                    continue
+                else:
+                    raise ConversionIgnoreError(
+                        f"Can not skip {field_name=}, the field is not optional nor have a default or default_factory assignment."
+                    )
+
+            # Create dict with field names and casted values
             if field_name in input_dict:
+                logger.debug(f"Initiate type cast of {field_name=} to {field_type=}")
                 _dict_with_types[field_name] = self._cast_value(
                     value=input_dict[field_name],
                     type_hint=field_type,
+                    nested_level=nested_level,
                 )
-            elif not _is_optional_type(field_type):
-                raise AttributeError(f"Missing field in source config: {field_name}")
+            elif not _can_ignore_conversion(field):
+                raise ConversionIgnoreError(
+                    f"Config not found and not allowed to skip {field_name=}, the field is not optional nor have a default or default_factory assignment."
+                )
         return dataclass(**_dict_with_types)
 
-    def _cast_value(self, value: Any, type_hint: Any) -> Any:
+    def _cast_value(self, value: Any, type_hint: Any, nested_level: int = 0) -> Any:
         if dataclasses.is_dataclass(type_hint):
+            logger.debug("Type hint is a Dataclass")
             _type_hint = type_hint if isinstance(type_hint, type) else type(type_hint)
-            return self._dict_to_dataclass(value, _type_hint)
+            return self._dict_to_dataclass(
+                input_dict=value, dataclass=_type_hint, nested_level=nested_level + 1
+            )
         if type_hint is Any:
             return value
         if type_hint in [int, float, complex, str, Path]:

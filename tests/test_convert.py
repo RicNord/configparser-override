@@ -8,7 +8,11 @@ import pytest
 
 from configparser_override import ConfigParserOverride
 from configparser_override.convert import ConfigConverter
-from configparser_override.exceptions import ConversionError, LiteralEvalMiscast
+from configparser_override.exceptions import (
+    ConversionError,
+    ConversionIgnoreError,
+    LiteralEvalMiscast,
+)
 
 
 @pytest.fixture()
@@ -271,8 +275,89 @@ def test_missing_key_in_config():
     parser.read(filenames=[])
     parser.apply_overrides()
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ConversionIgnoreError):
         ConfigConverter(parser.config).to_dataclass(C)
+
+
+def test_ignore_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key132: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    parser = ConfigParserOverride(sect1__key="ok", sect2__key="ignore_me")
+    parser.read(filenames=[])
+    parser.apply_overrides()
+
+    dc_config = ConfigConverter(parser.config).to_dataclass(C)
+    assert parser.config["sect2"]["key"] == "ignore_me"
+    assert dc_config.sect1.key == "ok"
+    assert dc_config.sect2 is None
+
+
+def test_optional_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    parser = ConfigParserOverride(
+        sect1__key="ok", sect2__key="ok1", sect2__key123="ok123"
+    )
+    parser.read(filenames=[])
+    parser.apply_overrides()
+
+    dc_config = ConfigConverter(parser.config).to_dataclass(C)
+    assert parser.config["sect2"]["key"] == "ok1"
+    assert dc_config.sect1.key == "ok"
+    assert dc_config.sect2 is not None
+    assert dc_config.sect2.key == "ok1"
+
+
+def test_exclude_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    parser = ConfigParserOverride(
+        sect1__key="ok",
+    )
+    parser.read(filenames=[])
+    parser.apply_overrides()
+
+    dc_config = ConfigConverter(parser.config, exclude_sections=["sect2"]).to_dataclass(
+        C
+    )
+    assert dc_config.sect1.key == "ok"
+    assert dc_config.sect2 is None
 
 
 def test_unsupported_type():

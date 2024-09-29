@@ -39,3 +39,21 @@ class NoConfigFilesFoundError(ConfigParserOverrideError):
     """
 
     pass
+
+
+class InvalidParametersError(ConfigParserOverrideError):
+    """
+    Exception raised when invalid parameters are used
+    """
+
+    pass
+
+
+class ConversionIgnoreError(ConfigParserOverrideError):
+    """
+    Exeption raised when a dataclass field can not be skipped during
+    conversion. Because the field is not Optional nor have a default or
+    default_factory assignment.
+    """
+
+    pass
