@@ -360,6 +360,59 @@ def test_exclude_section_config():
     assert dc_config.sect2 is None
 
 
+def test_exclude_non_optional_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Sect2
+
+    parser = ConfigParserOverride(
+        sect1__key="ok",
+    )
+    parser.read(filenames=[])
+    parser.apply_overrides()
+
+    with pytest.raises(ConversionIgnoreError):
+        ConfigConverter(parser.config, exclude_sections=["sect2"]).to_dataclass(C)
+
+
+def test_exclude_optional_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    parser = ConfigParserOverride(
+        sect1__key="ok",
+    )
+    parser.read(filenames=[])
+    parser.apply_overrides()
+
+    dc_config = ConfigConverter(parser.config, exclude_sections=["sect2"]).to_dataclass(
+        C
+    )
+    assert dc_config.sect2 is None
+    assert dc_config.sect1.key == "ok"
+
+
 def test_unsupported_type():
     @dataclass
     class Sect1:
