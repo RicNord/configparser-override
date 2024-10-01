@@ -54,6 +54,8 @@ def _is_optional_dataclass(type_hint: Any) -> bool:
 
     for arg in get_args(type_hint):
         if arg is type(None) or dataclasses.is_dataclass(arg):
+            continue
+        else:
             return False
 
     return True
@@ -186,10 +188,12 @@ class ConfigConverter:
         )
 
     def _parse_section(self, section: str) -> bool:
-        if self.include_sections is not None and section in self.include_sections:
-            return True
+        if self.include_sections is not None and section not in self.include_sections:
+            return False
 
-        if self.exclude_sections is not None and section in self.exclude_sections:  # noqa: SIM103
+        if (
+            self.exclude_sections is not None and section in self.exclude_sections
+        ):  # noqa: SIM103
             return False
 
         # Default case
