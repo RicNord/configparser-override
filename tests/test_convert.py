@@ -18,6 +18,7 @@ from configparser_override.convert import (
 from configparser_override.exceptions import (
     ConversionError,
     ConversionIgnoreError,
+    InvalidParametersError,
     LiteralEvalMiscast,
 )
 
@@ -736,6 +737,7 @@ def test_is_optional_dataclass_false():
 
     assert not _is_optional_dataclass(C)
     assert not _is_optional_dataclass(C(a=1))
+    assert not _is_optional_dataclass(Optional[int])
 
 
 def test_can_ignore_section():
@@ -799,3 +801,10 @@ def test_parse_section():
     converter = ConfigConverter(config, include_sections=["abc"])
     assert converter._parse_section("abc")
     assert not converter._parse_section("def")
+
+
+def test_too_many_args():
+    config = configparser.ConfigParser()
+
+    with pytest.raises(InvalidParametersError):
+        ConfigConverter(config, include_sections=["abc"], exclude_sections=["def"])
