@@ -1,13 +1,20 @@
 import configparser
 import platform
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, get_type_hints
 
 import pytest
 
 from configparser_override import ConfigParserOverride
-from configparser_override.convert import ConfigConverter
+from configparser_override.convert import (
+    ConfigConverter,
+    _can_ignore_conversion,
+    _can_ignore_section,
+    _field_has_default_value,
+    _is_optional_dataclass,
+    _is_optional_type,
+)
 from configparser_override.exceptions import (
     ConversionError,
     ConversionIgnoreError,
@@ -693,3 +700,102 @@ def test_path_type(config_file_path):
     else:  # UNIX
         assert dataclass_rep.section.key2.is_absolute()
         assert not dataclass_rep.section.key3.is_absolute()
+
+
+def test_is_optional_type_true():
+    assert _is_optional_type(Optional[int])
+    assert _is_optional_type(Optional[str])
+
+
+def test_is_optional_type_false():
+    assert not _is_optional_type(int)
+    assert not _is_optional_type(str)
+
+
+def test_is_optional_dataclass_true():
+    @dataclass
+    class C:
+        a: int
+
+    @dataclass
+    class C2:
+        a: int
+        b: C
+        c: Optional[C] = None
+
+    t = get_type_hints(C2)
+    assert _is_optional_dataclass(Optional[C])
+    assert _is_optional_dataclass(t["c"])
+    assert not _is_optional_dataclass(t["b"])
+
+
+def test_is_optional_dataclass_false():
+    @dataclass
+    class C:
+        a: int
+
+    assert not _is_optional_dataclass(C)
+    assert not _is_optional_dataclass(C(a=1))
+
+
+def test_can_ignore_section():
+    @dataclass
+    class C:
+        a: int
+
+    @dataclass
+    class C2:
+        c: Optional[C] = None
+
+    f = fields(C2)
+    fc = fields(C)
+    assert _can_ignore_section(f[0])
+    assert not _can_ignore_section(fc[0])
+
+
+def test_can_ignore_conversion():
+    @dataclass
+    class C:
+        a: int
+
+    @dataclass
+    class C2:
+        c: Optional[C] = None
+
+    f = fields(C2)
+    fc = fields(C)
+    assert _can_ignore_conversion(f[0])
+    assert not _can_ignore_conversion(fc[0])
+
+
+def test_field_has_default_value():
+    @dataclass
+    class C1:
+        a: int = 1
+
+    @dataclass
+    class C:
+        a: int
+
+    @dataclass
+    class C2:
+        c: Optional[C] = None
+
+    f = fields(C)
+    f1 = fields(C1)
+    f2 = fields(C2)
+    assert not _field_has_default_value(f[0])
+    assert _field_has_default_value(f1[0])
+    assert _field_has_default_value(f2[0])
+
+
+def test_parse_section():
+    config = configparser.ConfigParser()
+    config.add_section("abc")
+    config.set(section="abc", option="a", value="1")
+    config.add_section("def")
+    config.set(section="def", option="a", value="1")
+
+    converter = ConfigConverter(config, include_sections=["abc"])
+    assert converter._parse_section("abc")
+    assert not converter._parse_section("def")
