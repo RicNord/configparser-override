@@ -112,43 +112,6 @@ class ConfigConverter:
         else:
             self.boolean_states = self.config.BOOLEAN_STATES
 
-    def to_dict(self) -> dict[str, dict[str, str]]:
-        """
-        Convert the configuration data to a nested dictionary.
-
-        :return: The configuration data as a dictionary.
-        :rtype: dict[str, dict[str, str]]
-
-        **Examples:**
-
-        .. code-block:: python
-
-            >>> config = configparser.ConfigParser()
-            >>> config.read_string(\"\"\"
-            ... [section1]
-            ... key1 = value1
-            ... [section2]
-            ... key2 = value2
-            ... \"\"\")
-            >>> converter = ConfigConverter(config)
-            >>> config_dict = converter.to_dict()
-            >>> config_dict['section1']['key1']
-            'value1'
-        """
-        config_dict: dict[str, dict[str, str]] = {}
-        for sect in self.config.sections():
-            # Add nested sections
-            config_dict[sect] = {}
-            for opt in self.config.options(sect):
-                config_dict[sect][opt] = self.config.get(section=sect, option=opt)
-        # Add default nested section
-        config_dict[self.config.default_section] = {}
-        for opt in self.config.defaults():
-            config_dict[self.config.default_section][opt] = self.config.get(
-                section=self.config.default_section, option=opt
-            )
-        return config_dict
-
     def to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
@@ -181,23 +144,48 @@ class ConfigConverter:
             >>> config_as_dataclass = converter.to_dataclass(ExampleConfig)
             >>> assert config_as_dataclass.section1.key == "value" # True
         """
-        config_dict = self.to_dict()
+        config_dict = self._to_dict()
         return self._dict_to_dataclass(
             input_dict=config_dict,
             dataclass=dataclass,
         )
 
-    def _parse_section(self, section: str) -> bool:
-        if self.include_sections is not None and section not in self.include_sections:
-            return False
+    def _to_dict(self) -> dict[str, dict[str, str]]:
+        """
+        Convert the configuration data to a nested dictionary.
 
-        if (
-            self.exclude_sections is not None and section in self.exclude_sections
-        ):  # noqa: SIM103
-            return False
+        :return: The configuration data as a dictionary.
+        :rtype: dict[str, dict[str, str]]
 
-        # Default case
-        return True
+        **Examples:**
+
+        .. code-block:: python
+
+            >>> config = configparser.ConfigParser()
+            >>> config.read_string(\"\"\"
+            ... [section1]
+            ... key1 = value1
+            ... [section2]
+            ... key2 = value2
+            ... \"\"\")
+            >>> converter = ConfigConverter(config)
+            >>> config_dict = converter._to_dict()
+            >>> config_dict['section1']['key1']
+            'value1'
+        """
+        config_dict: dict[str, dict[str, str]] = {}
+        for sect in self.config.sections():
+            # Add nested sections
+            config_dict[sect] = {}
+            for opt in self.config.options(sect):
+                config_dict[sect][opt] = self.config.get(section=sect, option=opt)
+        # Add default nested section
+        config_dict[self.config.default_section] = {}
+        for opt in self.config.defaults():
+            config_dict[self.config.default_section][opt] = self.config.get(
+                section=self.config.default_section, option=opt
+            )
+        return config_dict
 
     def _dict_to_dataclass(
         self,
@@ -236,6 +224,16 @@ class ConfigConverter:
                     f"Config not found and not allowed to skip {field_name=}, the field is not optional nor have a default or default_factory assignment."
                 )
         return dataclass(**_dict_with_types)
+
+    def _parse_section(self, section: str) -> bool:
+        is_not_included = (
+            self.include_sections is not None and section not in self.include_sections
+        )
+        is_excluded = (
+            self.exclude_sections is not None and section in self.exclude_sections
+        )
+
+        return not (is_not_included or is_excluded)
 
     def _cast_value(self, value: Any, type_hint: Any, nested_level: int = 0) -> Any:
         if dataclasses.is_dataclass(type_hint):

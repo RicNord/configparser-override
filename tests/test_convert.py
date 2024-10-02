@@ -312,6 +312,37 @@ def test_ignore_section_config():
     assert dc_config.sect2 is None
 
 
+def test_dont_ignore_default_none_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    config = configparser.ConfigParser()
+    config.add_section("sect1")
+    config.set(section="sect1", option="key", value="a")
+    config.add_section("sect2")
+    config.set(section="sect2", option="key", value="b")
+    config.set(section="sect2", option="key123", value="c")
+
+    dc_config = ConfigConverter(config).to_dataclass(C)
+    assert config["sect1"]["key"] == "a"
+    assert config["sect2"]["key"] == "b"
+    assert dc_config.sect1.key == "a"
+    assert dc_config.sect2 is not None
+    assert dc_config.sect2.key == "b"
+    assert dc_config.sect2.key123 == "c"
+
+
 def test_optional_section_config():
     @dataclass
     class Sect1:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import configparser
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Mapping, Optional, Type
 
 from configparser_override._strategy_factory import StrategyFactory
 from configparser_override.convert import ConfigConverter
@@ -270,15 +270,32 @@ class ConfigParserOverride:
         """
         return self._config
 
-    def to_dataclass(self, dataclass: Type[Dataclass]) -> Dataclass:
+    def to_dataclass(
+        self,
+        dataclass: Type[Dataclass],
+        include_sections: Optional[List[str]] = None,
+        exclude_sections: Optional[List[str]] = None,
+    ) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
 
-        Can be useful to validate that the configuration adheres to the expected format
-        and leverage various typing frameworks, eg. integrations with your text editor.
+        This method allows converting the configuration into a dataclass instance,
+        optionally including or excluding specific sections. It can be useful for
+        validating that the configuration adheres to the expected format and leveraging
+        various typing frameworks, e.g., integrations with text editors.
 
         :param dataclass: The dataclass type to convert the configuration data into.
         :type dataclass: Dataclass
+        :param include_sections: A list of section names to explicitly include in the
+                                 conversion. If provided, only these sections will be
+                                 included in the resulting dataclass.
+                                 Default is None.
+        :type include_sections: Optional[List[str]]
+        :param exclude_sections: A list of section names to exclude from the conversion.
+                                 If provided, these sections will be excluded from the
+                                 resulting dataclass.
+                                 Default is None.
+        :type exclude_sections: Optional[List[str]]
         :return: An instance of the dataclass populated with the configuration data.
         :rtype: Dataclass
 
@@ -303,4 +320,8 @@ class ConfigParserOverride:
             >>> assert config_as_dataclass.section1.key == "a string" # True
         """
 
-        return ConfigConverter(self._config).to_dataclass(dataclass)
+        return ConfigConverter(
+            config=self._config,
+            include_sections=include_sections,
+            exclude_sections=exclude_sections,
+        ).to_dataclass(dataclass)
