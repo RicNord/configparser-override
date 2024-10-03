@@ -424,6 +424,83 @@ def test_exclude_non_optional_section_config():
         ConfigConverter(parser.config, exclude_sections=["sect2"]).to_dataclass(C)
 
 
+def test_dont_exclude_optional_full_section_config():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    config = configparser.ConfigParser()
+    config.add_section("sect1")
+    config.set(section="sect1", option="key", value="a")
+    config.add_section("sect2")
+    config.set(section="sect2", option="key", value="b")
+    config.set(section="sect2", option="key123", value="c")
+
+    dc_config = ConfigConverter(config).to_dataclass(C)
+    assert dc_config.sect2 is not None
+    assert dc_config.sect1.key == "a"
+    assert dc_config.sect2.key == "b"
+    assert dc_config.sect2.key123 == "c"
+
+
+def test_know_to_use_default_value():
+    @dataclass
+    class Sect1:
+        key: str = "a"
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str = "c"
+
+    @dataclass
+    class C:
+        sect1: Sect1
+        sect2: Optional[Sect2] = None
+
+    config = configparser.ConfigParser()
+    config.add_section("sect2")
+    config.set(section="sect2", option="key", value="b")
+
+    dc_config = ConfigConverter(config).to_dataclass(C)
+    assert dc_config.sect2 is not None
+    assert dc_config.sect1.key == "a"
+    assert dc_config.sect2.key == "b"
+    assert dc_config.sect2.key123 == "c"
+
+
+def test_all_optional_sections_none():
+    @dataclass
+    class Sect1:
+        key: str
+
+    @dataclass
+    class Sect2:
+        key: str
+        key123: str
+
+    @dataclass
+    class C:
+        sect1: Optional[Sect1] = None
+        sect2: Optional[Sect2] = None
+
+    config = configparser.ConfigParser()
+
+    dc_config = ConfigConverter(config).to_dataclass(C)
+    assert dc_config.sect1 is None
+    assert dc_config.sect2 is None
+
+
 def test_exclude_optional_section_config():
     @dataclass
     class Sect1:

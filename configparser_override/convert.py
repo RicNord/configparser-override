@@ -144,6 +144,12 @@ class ConfigConverter:
             >>> config_as_dataclass = converter.to_dataclass(ExampleConfig)
             >>> assert config_as_dataclass.section1.key == "value" # True
         """
+        for sect in dataclasses.fields(dataclass):
+            if sect.name != self.config.default_section and not self.config.has_section(
+                sect.name
+            ):
+                self.config.add_section(sect.name)
+
         config_dict = self._to_dict()
         return self._dict_to_dataclass(
             input_dict=config_dict,
