@@ -1,6 +1,6 @@
 import configparser
 import platform
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, Optional, get_type_hints
 
@@ -916,3 +916,63 @@ def test_too_many_args():
 
     with pytest.raises(InvalidParametersError):
         ConfigConverter(config, include_sections=["abc"], exclude_sections=["def"])
+
+
+def _factory_str() -> str:
+    return "factory_str"
+
+
+def _factory_int() -> int:
+    return 1
+
+
+def test_default_factory_in_dataclass():
+    @dataclass
+    class B:
+        s: str = field(default_factory=_factory_str)
+
+    @dataclass
+    class A:
+        i: Optional[int] = field(default_factory=_factory_int)
+
+    @dataclass
+    class C:
+        b: B
+        a: Optional[A] = None
+
+    config = configparser.ConfigParser()
+
+    converter = ConfigConverter(config).to_dataclass(C)
+
+    assert converter.a is not None
+    assert converter.a.i == 1
+    assert converter.b is not None
+    assert converter.b.s == "factory_str"
+
+
+def test_default_factory_in_dataclass_is_override():
+    @dataclass
+    class B:
+        s: str = field(default_factory=_factory_str)
+
+    @dataclass
+    class A:
+        i: Optional[int] = field(default_factory=_factory_int)
+
+    @dataclass
+    class C:
+        b: B
+        a: Optional[A] = None
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="i", value="2")
+    config.add_section("b")
+    config.set(section="b", option="s", value="not_factory")
+
+    converter = ConfigConverter(config).to_dataclass(C)
+
+    assert converter.a is not None
+    assert converter.a.i == 2
+    assert converter.b is not None
+    assert converter.b.s == "not_factory"
