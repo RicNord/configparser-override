@@ -32,6 +32,7 @@ from configparser_override.exceptions import (
     InvalidParametersError,
     LiteralEvalMiscast,
 )
+from configparser_override.types import SecretBytes, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -250,10 +251,12 @@ class ConfigConverter:
             )
         if type_hint is Any:
             return value
-        if type_hint in [int, float, complex, str, Path]:
+        if type_hint in [int, float, complex, str, Path, SecretStr]:
             return type_hint(value)
         if type_hint is bytes:
             return str(value).encode()
+        if type_hint is SecretBytes:
+            return SecretBytes(str(value).encode())
         if type_hint is bool:
             return self._cast_bool(value)
         _origin = get_origin(type_hint)

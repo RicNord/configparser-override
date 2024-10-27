@@ -21,6 +21,7 @@ from configparser_override.exceptions import (
     InvalidParametersError,
     LiteralEvalMiscast,
 )
+from configparser_override.types import SecretBytes, SecretStr
 
 
 @pytest.fixture()
@@ -976,3 +977,37 @@ def test_default_factory_in_dataclass_is_override():
     assert converter.a.i == 2
     assert converter.b is not None
     assert converter.b.s == "not_factory"
+
+
+def test_secret_types(config_file_allow_empty):
+    @dataclass
+    class A:
+        key1: SecretStr
+        key2: Optional[SecretStr] = None
+
+    @dataclass
+    class B:
+        key3: SecretBytes
+
+    @dataclass
+    class C:
+        a: A
+        b: B
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="key1", value="sensitive")
+    config.add_section("b")
+    config.set(section="b", option="key3", value="sensBytes")
+
+    dataclass_rep = ConfigConverter(config).to_dataclass(C)
+    assert dataclass_rep.a.key2 is None
+    assert dataclass_rep.a.key1 == SecretStr(value="sensitive")
+    assert len(dataclass_rep.a.key1) == len("sensitive")
+    assert str(dataclass_rep.a.key1) == "**********"
+    assert dataclass_rep.a.key1.get_secret_value() == "sensitive"
+
+    assert dataclass_rep.b.key3 == SecretBytes(value=b"sensBytes")
+    assert len(dataclass_rep.b.key3) == len(b"sensBytes")
+    assert str(dataclass_rep.b.key3) == "**********"
+    assert dataclass_rep.b.key3.get_secret_value() == b"sensBytes"
