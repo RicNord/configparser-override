@@ -238,6 +238,14 @@ Others:
 - Union | Tries to cast until successful, in the order the types are specified
 - Any | no type cast
 
+Custom types:
+
+- SecretType (abstract): Custom abstract type that masks the secret value when
+  converted to a string. Use SecretType.get_secret_value() to retrieve the
+  actual value.
+  - SecretStr | Implementation for strings
+  - SecretBytes | Implementation for bytes
+
 ## Platform Dependency
 
 Different operating systems handle environment variables differently. Linux is
