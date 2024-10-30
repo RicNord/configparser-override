@@ -250,7 +250,7 @@ print(config_as_dataclass.section1.key3)  # Output: None
 
 The converter offers an experimental option to accept any object that can
 be initialized with a single, unnamed string argument. To enable this feature,
-set `allow_custom_type = True` when using the converter (the default is
+set `allow_custom_types = True` when using the converter (the default is
 `False`).
 
 For example, a compatible object initialization might look like this:
