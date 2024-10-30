@@ -214,7 +214,7 @@ print(config_as_dataclass.section1.key3)  # Output: None
 
 ### Data Types
 
-Supported data types are:
+**Supported data types are:**
 
 - String
 - Integer
@@ -224,27 +224,37 @@ Supported data types are:
 - Bytes
 - pathlib.Path
 
-Collections (nesting is supported):
+**Collections (nesting is supported):**
 
 - List
 - Dict
 - Set
 - Tuple
 
-Others:
+**Others:**
 
 - None
 - Optional | Option does not need to exist in config
 - Union | Tries to cast until successful, in the order the types are specified
 - Any | no type cast
 
-Custom types:
+**Built-in custom types:**
 
 - SecretType (abstract): Custom abstract type that masks the secret value when
   converted to a string. Use SecretType.get_secret_value() to retrieve the
   actual value.
   - SecretStr | Implementation for strings
   - SecretBytes | Implementation for bytes
+
+**Experimental Support for Arbitrary Types:**
+
+The converter offers an experimental option to accept any object that can
+be initialized with a single, unnamed string argument. To enable this feature,
+set `allow_custom_type = True` when using the converter (the default is
+`False`).
+
+For example, a compatible object initialization might look like this:
+`MyCustomType("string value from config")`.
 
 ## Platform Dependency
 

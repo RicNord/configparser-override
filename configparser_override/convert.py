@@ -82,14 +82,29 @@ def _can_ignore_conversion(field: dataclasses.Field) -> bool:
 
 class ConfigConverter:
     """
-    A class to convert configuration data from a ConfigParser object to a dictionary
-    or dataclass.
+    A utility class for converting configuration data from a `ConfigParser`
+    object to a dataclass, with support for type casting.
 
-    :param config: The configuration parser object.
+    :param config: The `ConfigParser` object containing the configuration data.
     :type config: configparser.ConfigParser
-    :param boolean_states: Optional mapping of custom boolean states,
-        defaults to None and uses the internal mapping of the ConfigParser object.
-    :type boolean_states: Optional[Mapping[str, bool]], optional
+    :param boolean_states: Optional custom mapping of string representations to
+        boolean values. If not provided, the default mapping from
+        `ConfigParser.BOOLEAN_STATES` is used.
+    :type boolean_states: Optional[Mapping[str, bool]]
+    :param include_sections: Optional list of section names to include in the
+        conversion. If specified, only these sections will be processed.
+    :type include_sections: Optional[List[str]]
+    :param exclude_sections: Optional list of section names to exclude from the
+        conversion. If specified, these sections will be ignored.
+    :type exclude_sections: Optional[List[str]]
+    :param allow_custom_types: Flag to enable conversion of custom types in the
+        dataclass. If `True`, allows non-standard types to be converted by
+        calling them with a single string argument, (as specified in
+        `ConfigParser`). Defaults to `False`.
+    :type allow_custom_types: bool
+
+    :raises InvalidParametersError: If both `include_sections` and `exclude_sections`
+        are specified simultaneously.
     """
 
     def __init__(
@@ -98,6 +113,7 @@ class ConfigConverter:
         boolean_states: Optional[Mapping[str, bool]] = None,
         include_sections: Optional[List[str]] = None,
         exclude_sections: Optional[List[str]] = None,
+        allow_custom_types: bool = False,  # needs to take a string as first argument
     ) -> None:
         self.config = config
 
@@ -107,6 +123,7 @@ class ConfigConverter:
             )
         self.include_sections = include_sections
         self.exclude_sections = exclude_sections
+        self.allow_custom_types = allow_custom_types
 
         if boolean_states:
             self.boolean_states = boolean_states
@@ -272,6 +289,8 @@ class ConfigConverter:
             return self._cast_union(value, type_hint)
         if type_hint is type(None):
             return None
+        if self.allow_custom_types:
+            return type_hint(value)
         raise ValueError(f"Unsupported type: {type_hint}")
 
     def _cast_bool(self, value: Any) -> bool:

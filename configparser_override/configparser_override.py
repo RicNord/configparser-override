@@ -275,6 +275,7 @@ class ConfigParserOverride:
         dataclass: Type[Dataclass],
         include_sections: Optional[List[str]] = None,
         exclude_sections: Optional[List[str]] = None,
+        allow_custom_types: bool = False,
     ) -> Dataclass:
         """
         Convert the configuration data to a dataclass instance.
@@ -286,16 +287,18 @@ class ConfigParserOverride:
 
         :param dataclass: The dataclass type to convert the configuration data into.
         :type dataclass: Dataclass
-        :param include_sections: A list of section names to explicitly include in the
-                                 conversion. If provided, only these sections will be
-                                 included in the resulting dataclass.
-                                 Default is None.
+        :param include_sections: Optional list of section names to include in the
+            conversion. If specified, only these sections will be processed.
         :type include_sections: Optional[List[str]]
-        :param exclude_sections: A list of section names to exclude from the conversion.
-                                 If provided, these sections will be excluded from the
-                                 resulting dataclass.
-                                 Default is None.
+        :param exclude_sections: Optional list of section names to exclude from the
+            conversion. If specified, these sections will be ignored.
         :type exclude_sections: Optional[List[str]]
+        :param allow_custom_types: Flag to enable conversion of custom types in the
+            dataclass. If `True`, allows non-standard types to be converted by
+            calling them with a single string argument, (as specified in
+            `ConfigParser`). Defaults to `False`.
+        :type allow_custom_types: bool
+
         :return: An instance of the dataclass populated with the configuration data.
         :rtype: Dataclass
 
@@ -324,4 +327,5 @@ class ConfigParserOverride:
             config=self._config,
             include_sections=include_sections,
             exclude_sections=exclude_sections,
+            allow_custom_types=allow_custom_types,
         ).to_dataclass(dataclass)

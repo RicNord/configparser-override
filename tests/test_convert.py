@@ -979,7 +979,7 @@ def test_default_factory_in_dataclass_is_override():
     assert converter.b.s == "not_factory"
 
 
-def test_secret_types(config_file_allow_empty):
+def test_secret_types():
     @dataclass
     class A:
         key1: SecretStr
@@ -1011,3 +1011,132 @@ def test_secret_types(config_file_allow_empty):
     assert len(dataclass_rep.b.key3) == len(b"sensBytes")
     assert str(dataclass_rep.b.key3) == "**********"
     assert dataclass_rep.b.key3.get_secret_value() == b"sensBytes"
+
+
+def test_custom_types():
+    class CustType:
+        def __init__(self, value) -> None:
+            self.value = value
+
+        def __str__(self) -> str:
+            return self.value
+
+    @dataclass
+    class A:
+        key1: CustType
+        key2: Optional[CustType] = None
+
+    @dataclass
+    class B:
+        key3: Optional[CustType] = None
+
+    @dataclass
+    class C:
+        a: A
+        b: B
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="key1", value="customValue")
+    config.add_section("b")
+    config.set(section="b", option="key3", value="anotherCustomValue")
+
+    dataclass_rep = ConfigConverter(config, allow_custom_types=True).to_dataclass(C)
+    assert dataclass_rep.a.key2 is None
+    assert isinstance(dataclass_rep.a.key1, CustType)
+    assert isinstance(dataclass_rep.b.key3, CustType)
+    assert str(dataclass_rep.a.key1) == "customValue"
+    assert str(dataclass_rep.b.key3) == "anotherCustomValue"
+
+
+def test_custom_mulit_arg_types():
+    class CustType:
+        def __init__(self, value, extra="okok") -> None:
+            self.value = value
+            self.extra = extra
+
+        def __str__(self) -> str:
+            return self.value
+
+    @dataclass
+    class A:
+        key1: CustType
+        key2: Optional[CustType] = None
+
+    @dataclass
+    class B:
+        key3: Optional[CustType] = None
+
+    @dataclass
+    class C:
+        a: A
+        b: B
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="key1", value="customValue")
+    config.add_section("b")
+    config.set(section="b", option="key3", value="anotherCustomValue")
+
+    dataclass_rep = ConfigConverter(config, allow_custom_types=True).to_dataclass(C)
+    assert dataclass_rep.a.key2 is None
+    assert isinstance(dataclass_rep.a.key1, CustType)
+    assert isinstance(dataclass_rep.b.key3, CustType)
+    assert str(dataclass_rep.a.key1) == "customValue"
+    assert str(dataclass_rep.b.key3) == "anotherCustomValue"
+
+
+def test_raise_for_invalid_custom_types():
+    class CustType:
+        def __init__(self) -> None: ...
+
+    @dataclass
+    class A:
+        key1: CustType
+        key2: Optional[CustType] = None
+
+    @dataclass
+    class B:
+        key3: Optional[CustType] = None
+
+    @dataclass
+    class C:
+        a: A
+        b: B
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="key1", value="customValue")
+    config.add_section("b")
+    config.set(section="b", option="key3", value="anotherCustomValue")
+
+    with pytest.raises(TypeError):
+        ConfigConverter(config, allow_custom_types=True).to_dataclass(C)
+
+
+def test_raise_for_invalid_custom_types_missing_arg():
+    class CustType:
+        def __init__(self, first, second) -> None: ...
+
+    @dataclass
+    class A:
+        key1: CustType
+        key2: Optional[CustType] = None
+
+    @dataclass
+    class B:
+        key3: Optional[CustType] = None
+
+    @dataclass
+    class C:
+        a: A
+        b: B
+
+    config = configparser.ConfigParser()
+    config.add_section("a")
+    config.set(section="a", option="key1", value="customValue")
+    config.add_section("b")
+    config.set(section="b", option="key3", value="anotherCustomValue")
+
+    with pytest.raises(TypeError):
+        ConfigConverter(config, allow_custom_types=True).to_dataclass(C)
