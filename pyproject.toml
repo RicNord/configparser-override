@@ -75,8 +75,9 @@ select = [
     "I",      # isort
     "C",      # flake8-comprehensions
     "B",      # flake8-bugbear
+    "DTZ",    # flake8-datetimez
     "TID",    # flake8-tidy-import
-    "TCH",    # flake8-type-checking TYPE_CHECKING blocks
+    "TC",     # flake8-type-checking TYPE_CHECKING blocks
     "ISC",    # flake8-implicit-str-concat
     "LOG",    # flake8-logging
     "SIM",    # flake8-simplify
